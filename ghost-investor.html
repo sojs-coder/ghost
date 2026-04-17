@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ghost — Location Privacy Hardware</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --white: #ffffff;
+    --off-white: #f7f6f4;
+    --light: #eeece9;
+    --mid: #c8c4bd;
+    --dim: #8a8680;
+    --ink: #1a1916;
+    --accent: #1a1916;
+    --rule: #e2dfd9;
+    --radius: 4px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    background: var(--white);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px; height: 64px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--rule);
+  }
+  .nav-logo { font-family: 'DM Serif Display', serif; font-size: 22px; letter-spacing: -0.02em; }
+  .nav-links { display: flex; gap: 36px; }
+  .nav-links a { font-size: 13px; font-weight: 400; color: var(--dim); text-decoration: none; letter-spacing: 0.04em; text-transform: uppercase; transition: color .2s; }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-badge { font-family: 'DM Mono', monospace; font-size: 11px; background: var(--ink); color: var(--white); padding: 4px 10px; border-radius: 2px; letter-spacing: 0.06em; }
+
+  /* ─── SECTIONS ─── */
+  section { padding: 120px 48px; }
+  .container { max-width: 1120px; margin: 0 auto; }
+
+  /* ─── HERO ─── */
+  #hero {
+    padding-top: 160px; padding-bottom: 0;
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center;
+    border-bottom: 1px solid var(--rule);
+  }
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--dim); margin-bottom: 28px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .hero-eyebrow::before { content: ''; display: block; width: 24px; height: 1px; background: var(--mid); }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(52px, 7vw, 96px);
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    max-width: 780px;
+    margin-bottom: 32px;
+  }
+  h1 em { font-style: italic; color: var(--dim); }
+  .hero-sub {
+    font-size: 18px; font-weight: 300; color: var(--dim);
+    max-width: 480px; line-height: 1.65; margin-bottom: 56px;
+  }
+  .hero-stats {
+    display: flex; gap: 0; border-top: 1px solid var(--rule);
+    padding-top: 48px; margin-top: 0;
+  }
+  .hero-stat {
+    flex: 1; padding: 32px 0; padding-right: 48px;
+    border-right: 1px solid var(--rule);
+  }
+  .hero-stat:last-child { border-right: none; }
+  .hero-stat-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 42px; letter-spacing: -0.03em;
+    line-height: 1; margin-bottom: 8px;
+  }
+  .hero-stat-label { font-size: 12px; color: var(--dim); letter-spacing: 0.04em; text-transform: uppercase; font-weight: 400; }
+
+  /* ─── DEVICE RENDER ─── */
+  #device {
+    background: var(--off-white);
+    padding: 120px 48px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .device-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+  .device-render {
+    display: flex; justify-content: center; align-items: center;
+    position: relative;
+  }
+
+  /* SVG box render */
+  .device-svg-wrap { position: relative; width: 100%; max-width: 400px; }
+
+  .device-text h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(32px, 3.5vw, 48px);
+    letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 24px;
+  }
+  .device-text p { font-size: 16px; line-height: 1.75; color: var(--dim); margin-bottom: 32px; }
+
+  .spec-list { border-top: 1px solid var(--rule); padding-top: 28px; }
+  .spec-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 10px 0; border-bottom: 1px solid var(--rule);
+    font-size: 14px;
+  }
+  .spec-key { color: var(--dim); font-weight: 400; }
+  .spec-val { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
+
+  /* ─── HOW IT WORKS ─── */
+  #how { border-bottom: 1px solid var(--rule); }
+  .section-label {
+    font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--dim); margin-bottom: 56px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-label::before { content: ''; display: block; width: 24px; height: 1px; background: var(--mid); }
+  .section-h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(32px, 3.5vw, 52px);
+    letter-spacing: -0.03em; line-height: 1.1;
+    margin-bottom: 72px; max-width: 560px;
+  }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+  .step { padding: 0 32px 0 0; border-right: 1px solid var(--rule); }
+  .step:last-child { border-right: none; padding-right: 0; padding-left: 32px; }
+  .step:first-child { padding-left: 0; }
+  .step:not(:first-child):not(:last-child) { padding-left: 32px; }
+  .step-num {
+    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--mid);
+    letter-spacing: 0.08em; margin-bottom: 20px; display: block;
+  }
+  .step h3 { font-size: 16px; font-weight: 500; margin-bottom: 12px; line-height: 1.3; }
+  .step p { font-size: 14px; color: var(--dim); line-height: 1.7; }
+
+  /* ─── PROTOCOL DIAGRAM ─── */
+  .protocol-block {
+    margin-top: 72px; padding: 48px;
+    background: var(--ink); border-radius: var(--radius);
+    color: var(--white);
+  }
+  .protocol-label {
+    font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--mid); margin-bottom: 32px;
+  }
+  .protocol-chain { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+  .proto-node {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 2px; padding: 14px 20px;
+  }
+  .proto-node-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+  .proto-node-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--mid); }
+  .proto-arrow { padding: 0 16px; color: var(--mid); font-size: 18px; }
+  .proto-note { margin-top: 24px; font-size: 13px; color: var(--dim); font-family: 'DM Mono', monospace; }
+
+  /* ─── COST ─── */
+  #cost { border-bottom: 1px solid var(--rule); }
+  .cost-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; }
+  .cost-card {
+    border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden;
+  }
+  .cost-card-header {
+    padding: 24px 32px; border-bottom: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .cost-card-title { font-size: 13px; font-weight: 500; letter-spacing: 0.03em; text-transform: uppercase; }
+  .cost-card-total { font-family: 'DM Serif Display', serif; font-size: 36px; letter-spacing: -0.03em; }
+  .cost-card-total span { font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 300; color: var(--dim); }
+  .cost-items { padding: 8px 0; }
+  .cost-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 32px; border-bottom: 1px solid var(--rule);
+  }
+  .cost-item:last-child { border-bottom: none; }
+  .cost-item-name { font-size: 14px; }
+  .cost-item-note { font-size: 12px; color: var(--dim); margin-top: 2px; }
+  .cost-item-price { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; }
+  .cost-note { padding: 24px 32px; background: var(--off-white); font-size: 13px; color: var(--dim); line-height: 1.6; }
+  .cost-suffix { margin-top: 40px; font-size: 14px; color: var(--dim); line-height: 1.8; }
+  .cost-suffix strong { color: var(--ink); font-weight: 500; }
+
+  /* ─── LEGAL ─── */
+  #legal { border-bottom: 1px solid var(--rule); }
+  .legal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .legal-card { border: 1px solid var(--rule); border-radius: var(--radius); padding: 28px; }
+  .legal-card-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em;
+    text-transform: uppercase; margin-bottom: 16px;
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .status-required .status-dot { background: #e07b3a; }
+  .status-required { color: #e07b3a; }
+  .status-clear .status-dot { background: #5a9e6e; }
+  .status-clear { color: #5a9e6e; }
+  .status-pending .status-dot { background: var(--mid); }
+  .status-pending { color: var(--dim); }
+  .legal-card h3 { font-size: 15px; font-weight: 500; margin-bottom: 10px; }
+  .legal-card p { font-size: 13px; color: var(--dim); line-height: 1.7; }
+
+  /* ─── DETECTION RISKS ─── */
+  #risks { border-bottom: 1px solid var(--rule); }
+  .risks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .risk-item {
+    padding: 40px; border-bottom: 1px solid var(--rule); border-right: 1px solid var(--rule);
+  }
+  .risk-item:nth-child(2n) { border-right: none; }
+  .risk-item:nth-last-child(-n+2) { border-bottom: none; }
+  .risk-severity {
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 14px;
+    display: inline-block; padding: 3px 8px; border-radius: 2px;
+  }
+  .sev-medium { background: #fef3e2; color: #b76a1a; }
+  .sev-low { background: #edf6f0; color: #3d7a53; }
+  .sev-mitigated { background: #f0f0f0; color: #666; }
+  .risk-item h3 { font-size: 15px; font-weight: 500; margin-bottom: 10px; }
+  .risk-item p { font-size: 13px; color: var(--dim); line-height: 1.7; }
+
+  /* ─── TECH STACK ─── */
+  #tech { border-bottom: 1px solid var(--rule); }
+  .tech-cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 48px; }
+  .tech-col h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; color: var(--dim); margin-bottom: 20px; }
+  .tech-tag {
+    display: inline-block; margin: 0 6px 8px 0;
+    background: var(--off-white); border: 1px solid var(--rule);
+    border-radius: 2px; padding: 6px 12px;
+    font-family: 'DM Mono', monospace; font-size: 12px; color: var(--ink);
+  }
+
+  /* ─── ROADMAP ─── */
+  #roadmap { border-bottom: 1px solid var(--rule); }
+  .roadmap-phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+  .phase {
+    padding: 40px; border-right: 1px solid var(--rule);
+  }
+  .phase:last-child { border-right: none; }
+  .phase-label {
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--dim); margin-bottom: 16px;
+  }
+  .phase h3 { font-size: 17px; font-weight: 500; margin-bottom: 16px; }
+  .phase ul { list-style: none; }
+  .phase ul li {
+    font-size: 13px; color: var(--dim); padding: 6px 0;
+    border-bottom: 1px solid var(--rule); line-height: 1.5;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .phase ul li::before { content: '—'; color: var(--mid); flex-shrink: 0; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    padding: 48px; display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--rule);
+  }
+  .footer-logo { font-family: 'DM Serif Display', serif; font-size: 18px; }
+  .footer-note { font-size: 12px; color: var(--dim); font-family: 'DM Mono', monospace; }
+
+  /* ─── ANIMATIONS ─── */
+  .fade-up { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    /* Nav — hide links, keep logo + badge */
+    nav { padding: 0 20px; }
+    .nav-links { display: none; }
+    .nav-badge { font-size: 10px; padding: 3px 8px; }
+
+    /* Sections */
+    section { padding: 72px 20px; }
+    #device { padding: 72px 20px; }
+
+    /* Hero */
+    #hero { padding-top: 120px; padding-left: 20px; padding-right: 20px; }
+    h1 { font-size: clamp(38px, 10vw, 56px); }
+    .hero-sub { font-size: 16px; margin-bottom: 40px; }
+    .hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+    .hero-stat { border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 20px 16px; }
+    .hero-stat:nth-child(2n) { border-right: none; }
+    .hero-stat:nth-last-child(-n+2) { border-bottom: none; }
+    .hero-stat-num { font-size: 30px; }
+    .hero-stat-label { font-size: 11px; }
+
+    /* Device section — stack render above text */
+    #device .device-layout { grid-template-columns: 1fr; gap: 40px; }
+    .device-text h2 { font-size: 28px; }
+
+    /* How it works steps */
+    .steps { grid-template-columns: 1fr; }
+    .step { border-right: none; border-bottom: 1px solid var(--rule); padding: 0 0 24px 0; margin-bottom: 24px; }
+    .step:last-child { border-bottom: none; margin-bottom: 0; }
+
+    /* Protocol chain — horizontal scroll */
+    .protocol-block { padding: 28px 20px; overflow-x: auto; }
+    .protocol-chain { flex-wrap: nowrap; width: max-content; }
+    .proto-node { padding: 10px 14px; }
+    .proto-node-title { font-size: 12px; }
+    .proto-node-sub { font-size: 10px; }
+    .proto-arrow { padding: 0 10px; font-size: 14px; }
+
+    /* Cost */
+    .cost-layout { grid-template-columns: 1fr; gap: 32px; }
+    .cost-card-header { padding: 18px 20px; flex-direction: column; gap: 6px; align-items: flex-start; }
+    .cost-card-total { font-size: 28px; }
+    .cost-item { padding: 10px 20px; }
+    .cost-note { padding: 16px 20px; }
+
+    /* Legal */
+    .legal-grid { grid-template-columns: 1fr; gap: 16px; }
+    .legal-card { padding: 20px; }
+
+    /* Risks */
+    .risks-grid { grid-template-columns: 1fr; }
+    .risk-item { border-right: none !important; padding: 28px 0; }
+    .risk-item:last-child { border-bottom: none; }
+
+    /* Tech */
+    .tech-cols { grid-template-columns: 1fr; gap: 32px; }
+
+    /* Section headings */
+    .section-h2 { font-size: clamp(26px, 7vw, 38px); margin-bottom: 48px; }
+
+    /* Roadmap */
+    .roadmap-phases { grid-template-columns: 1fr; }
+    .phase { border-right: none; border-bottom: 1px solid var(--rule); padding: 32px 0; }
+    .phase:last-child { border-bottom: none; }
+
+    /* Spec table */
+    .spec-val { font-size: 11px; text-align: right; max-width: 55%; }
+
+    footer { flex-direction: column; gap: 16px; text-align: center; padding: 32px 20px; }
+  }
+
+  @media (max-width: 400px) {
+    h1 { font-size: 34px; }
+    .hero-stat-num { font-size: 26px; }
+    .nav-badge { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Ghost</div>
+  <div class="nav-links">
+    <a href="#device">Hardware</a>
+    <a href="#how">How It Works</a>
+    <a href="#cost">Unit Economics</a>
+    <a href="#legal">Compliance</a>
+    <a href="#roadmap">Roadmap</a>
+  </div>
+  <div class="nav-badge">Investor Preview · v2.0</div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-eyebrow">Location Privacy Hardware</div>
+    <h1>System-wide GPS<br>privacy, <em>no jailbreak</em></h1>
+    <p class="hero-sub">A pocket-sized USB device that overrides an iPhone's location at the OS level — indistinguishable from real GPS to every app on the phone.</p>
+    <div class="hero-stats fade-up">
+      <div class="hero-stat">
+        <div class="hero-stat-num">&lt;15s</div>
+        <div class="hero-stat-label">USB connect → active session</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">100%</div>
+        <div class="hero-stat-label">App-level location override</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">8 hrs</div>
+        <div class="hero-stat-label">Battery life, compact SKU</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">&lt;$40</div>
+        <div class="hero-stat-label">Unit cost at volume</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEVICE RENDER -->
+<section id="device">
+  <div class="container">
+    <div class="device-layout">
+
+      <!-- Three.js box render -->
+      <div class="device-render fade-up">
+        <canvas id="ghost-canvas" style="width:100%;border-radius:4px;cursor:grab;display:block;margin:0 auto;touch-action:none;"></canvas>
+        <p style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--dim);margin-top:12px;letter-spacing:0.06em;">DRAG TO ROTATE</p>
+      </div>
+
+      <!-- TEXT -->
+      <div class="device-text fade-up">
+        <div class="section-label">Hardware v2.0</div>
+        <h2>2″ × 2″ × 3″<br>pocketable form factor</h2>
+        <p>A sealed ABS box with two USB-C ports — one for charging, one for the phone. Throw it in a bag, connect the cable, and every location-sharing app on the phone sees a pre-recorded cover route.</p>
+
+        <div class="spec-list">
+          <div class="spec-row"><span class="spec-key">Compute</span><span class="spec-val">Raspberry Pi Zero 2W · 4× ARM A53 · 512 MB</span></div>
+          <div class="spec-row"><span class="spec-key">Storage</span><span class="spec-val">8 GB microSD · read-only root · RW /data partition</span></div>
+          <div class="spec-row"><span class="spec-key">Battery (compact)</span><span class="spec-val">2,000 mAh LiPo · ~8 hr runtime</span></div>
+          <div class="spec-row"><span class="spec-key">Battery (extended)</span><span class="spec-val">5,000 mAh LiPo · ~20 hr runtime</span></div>
+          <div class="spec-row"><span class="spec-key">Phone connection</span><span class="spec-val">USB-C to USB-C or Lightning · USB 2.0 OTG</span></div>
+          <div class="spec-row"><span class="spec-key">Indicators</span><span class="spec-val">1× RGB LED · 1× tactile button</span></div>
+          <div class="spec-row"><span class="spec-key">iOS compatibility</span><span class="spec-val">iOS 16.0 → 18.x (current)</span></div>
+          <div class="spec-row"><span class="spec-key">Enclosure</span><span class="spec-val">Injection-molded ABS · no exposed PCB</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="container">
+    <div class="section-label">Protocol</div>
+    <h2 class="section-h2">The same API Apple uses in Xcode</h2>
+
+    <div class="steps fade-up">
+      <div class="step">
+        <span class="step-num">01</span>
+        <h3>USB detection</h3>
+        <p>The device connects to the iPhone over USB-C. <code style="font-family:'DM Mono',monospace;font-size:12px;">usbmuxd</code> detects the phone and authenticates with the stored pairing record — no re-prompt after initial setup.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">02</span>
+        <h3>DVT tunnel</h3>
+        <p>The <code style="font-family:'DM Mono',monospace;font-size:12px;">ghostd</code> daemon opens an encrypted RemoteXPC/QUIC tunnel to iOS's developer services port via <code style="font-family:'DM Mono',monospace;font-size:12px;">pymobiledevice3</code> — the same protocol Xcode uses.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">03</span>
+        <h3>Location injection</h3>
+        <p>The DVT <code style="font-family:'DM Mono',monospace;font-size:12px;">simulate-location</code> service feeds coordinates directly into iOS's <code style="font-family:'DM Mono',monospace;font-size:12px;">locationd</code> at 1 Hz. Every app reading <code style="font-family:'DM Mono',monospace;font-size:12px;">CLLocation</code> sees the cover route.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">04</span>
+        <h3>Believability layer</h3>
+        <p>Gaussian position jitter (σ=1.5m), variable accuracy values, and smooth altitude variation make the injected trace statistically indistinguishable from real GPS output.</p>
+      </div>
+    </div>
+
+    <div class="protocol-block fade-up">
+      <div class="protocol-label">Signal path — iPhone → locationd</div>
+      <div class="protocol-chain">
+        <div class="proto-node">
+          <div class="proto-node-title">Ghost Device</div>
+          <div class="proto-node-sub">ghostd · pymobiledevice3</div>
+        </div>
+        <div class="proto-arrow">→</div>
+        <div class="proto-node">
+          <div class="proto-node-title">USB-C</div>
+          <div class="proto-node-sub">usbmuxd · CDC-NCM</div>
+        </div>
+        <div class="proto-arrow">→</div>
+        <div class="proto-node">
+          <div class="proto-node-title">lockdownd</div>
+          <div class="proto-node-sub">iOS trusted channel</div>
+        </div>
+        <div class="proto-arrow">→</div>
+        <div class="proto-node">
+          <div class="proto-node-title">DVT simulate-location</div>
+          <div class="proto-node-sub">developer services</div>
+        </div>
+        <div class="proto-arrow">→</div>
+        <div class="proto-node">
+          <div class="proto-node-title">locationd</div>
+          <div class="proto-node-sub">iOS system daemon</div>
+        </div>
+        <div class="proto-arrow">→</div>
+        <div class="proto-node">
+          <div class="proto-node-title">All apps</div>
+          <div class="proto-node-sub">Find My · Life360 · Snapchat</div>
+        </div>
+      </div>
+      <div class="proto-note">No jailbreak · No MFi certification · No root · Identical to Xcode + iAnyGo mechanism</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- UNIT ECONOMICS -->
+<section id="cost">
+  <div class="container">
+    <div class="section-label">Unit Economics</div>
+    <h2 class="section-h2">Sub-$40 at volume.<br>~$100 to prototype.</h2>
+
+    <div class="cost-layout fade-up">
+
+      <!-- PROTOTYPE -->
+      <div class="cost-card">
+        <div class="cost-card-header">
+          <div class="cost-card-title">Prototype / Dev Unit</div>
+          <div class="cost-card-total">~$100 <span>/ unit</span></div>
+        </div>
+        <div class="cost-items">
+          <div class="cost-item">
+            <div><div class="cost-item-name">Raspberry Pi Zero 2W</div><div class="cost-item-note">retail / hobbyist pricing</div></div>
+            <div class="cost-item-price">$15</div>
+          </div>
+          <div class="cost-item">
+            <div><div class="cost-item-name">8 GB microSD (Class 10)</div><div class="cost-item-note">pre-flashed</div></div>
+            <div class="cost-item-price">$8</div>
+          </div>
+          <div class="cost-item">
+            <div><div class="cost-item-name">2,000 mAh LiPo + PMIC</div><div class="cost-item-note">TP4056, boost converter</div></div>
+            <div class="cost-item-price">$12</div>
+          </div>
+          <div class="cost-item">
+            <div><div class="cost-item-name">Carrier PCB (small run)</div><div class="cost-item-note">OSHPark 3-board minimum</div></div>
+            <div class="cost-item-price">$30</div>
+          </div>
+          <div class="cost-item">
+            <div><div class="cost-item-name">Enclosure (3D-printed)</div><div class="cost-item-note">ABS, in-house or service</div></div>
+            <div class="cost-item-price">$18</div>
+          </div>
+          <div class="cost-item">
+            <div><div class="cost-item-name">USB-C cable + misc.</div><div class="cost-item-note">connectors, LED, button</div></div>
+            <div class="cost-item-price">$8</div>
+          </div>
+          <div class="cost-item">
+            <div><div class="cost-item-name">Assembly (manual)</div><div class="cost-item-note">~30 min / unit</div></div>
+            <div class="cost-item-price">$10</div>
+          </div>
+        </div>
+        <div class="cost-note">Prototype cost is dominated by small-run PCB fabrication and 3D-printed enclosures. Both drop dramatically at volume.</div>
+      </div>
+
+      <!-- VOLUME -->
+      <div class="cost-card">
+        <div class="cost-card-header">
+          <div class="cost-card-title">Production (1,000+ units)</div>
+          <div class="cost-card-total">&lt;$40 <span>/ unit</span></div>
+        </div>
+        <div class="cost-items">
+          <div class="cost-item">
+            <div><div class="cost-item-name">Pi Zero 2W or equiv. SBC</div><div class="cost-item-note">volume tray pricing</div></div>
+            <div class="cost-item-price">$10–12</div>
+          </div>
+          <div class="cost-item">
+            <div><div class="cost-item-name">8 GB microSD, pre-flashed</div><div class="cost-item-note">bulk industrial grade</div></div>
+            <div class="cost-item-price">$3</div>
+          </div>
+          <div class="cost-item">
+            <div><div class="cost-item-name">LiPo cell + PMIC circuit</div><div class="cost-item-note">2,000 mAh compact SKU</div></div>
+            <div class="cost-item-price">$5–7</div>
+          </div>
+          <div class="cost-item">
+            <div><div class="cost-item-name">Custom carrier PCB</div><div class="cost-item-note">JLCPCB, 1k run, assembled</div></div>
+            <div class="cost-item-price">$6–8</div>
+          </div>
+          <div class="cost-item">
+            <div><div class="cost-item-name">Injection-molded ABS enclosure</div><div class="cost-item-note">amortized tooling at 1k+</div></div>
+            <div class="cost-item-price">$3–4</div>
+          </div>
+          <div class="cost-item">
+            <div><div class="cost-item-name">Cable, packaging, misc.</div><div class="cost-item-note">0.5m USB-C, retail box, QR card</div></div>
+            <div class="cost-item-price">$3</div>
+          </div>
+          <div class="cost-item">
+            <div><div class="cost-item-name">Contract assembly + test</div><div class="cost-item-note">CM, automated test fixture</div></div>
+            <div class="cost-item-price">$3–4</div>
+          </div>
+        </div>
+        <div class="cost-note">At 1,000 units the mold tooling (~$8–15k one-time) is the only significant fixed cost. Per-unit drops below $35 at 5,000 units.</div>
+      </div>
+
+    </div>
+    <p class="cost-suffix fade-up"><strong>Note:</strong> These are bill-of-materials and contract-manufacturing estimates, not development costs. Development cost (firmware, iOS app, backend) is a one-time sunk cost independent of unit economics. Certification costs (FCC, CE) are estimated at $15–25k, one-time per hardware revision.</p>
+  </div>
+</section>
+
+<!-- LEGAL / COMPLIANCE -->
+<section id="legal">
+  <div class="container">
+    <div class="section-label">Compliance</div>
+    <h2 class="section-h2">Required filings<br>before commercial sale</h2>
+
+    <div class="legal-grid fade-up">
+
+      <div class="legal-card">
+        <div class="legal-card-status status-required"><span class="status-dot"></span>Required — Pre-launch</div>
+        <h3>FCC Part 15B</h3>
+        <p>Unintentional radiator certification required for US market. The device contains no intentional RF transmitter (Wi-Fi and BLE are disabled). Class B testing at accredited lab. Estimated cost: $5–10k. Self-declaration path available for Class B digital devices.</p>
+      </div>
+
+      <div class="legal-card">
+        <div class="legal-card-status status-required"><span class="status-dot"></span>Required — EU launch</div>
+        <h3>CE / RED Declaration</h3>
+        <p>EU market requires CE marking and Radio Equipment Directive compliance. EMC testing (EN 55032, EN 55035) plus safety (EN 62368-1). Can be combined with FCC testing at same lab. Estimated €8–15k. Required before any EU sale or distribution.</p>
+      </div>
+
+      <div class="legal-card">
+        <div class="legal-card-status status-required"><span class="status-dot"></span>Required — All markets</div>
+        <h3>RoHS / REACH</h3>
+        <p>Material compliance required for EU and most international markets. Supplier declarations for all components; PCB and battery must meet restricted substance limits. Generally handled via supply chain declarations; minimal direct cost.</p>
+      </div>
+
+      <div class="legal-card">
+        <div class="legal-card-status status-clear"><span class="status-dot"></span>Not Required</div>
+        <h3>Apple MFi</h3>
+        <p>MFi certification is explicitly <em>not required</em>. The DVT <code style="font-family:'DM Mono',monospace;font-size:12px;">simulate-location</code> path communicates via standard USB host mode — not via Apple's MFi EAAccessory framework. No Apple authentication chip or program enrollment needed.</p>
+      </div>
+
+      <div class="legal-card">
+        <div class="legal-card-status status-pending"><span class="status-dot"></span>Recommended — Before launch</div>
+        <h3>Legal Opinion: CFAA / ECPA</h3>
+        <p>The device is operated by the phone owner on their own device. No unauthorized access to any computer system occurs. A written opinion from outside counsel on CFAA and wire fraud exposure is recommended before commercial launch, particularly regarding the DNS blocking feature.</p>
+      </div>
+
+      <div class="legal-card">
+        <div class="legal-card-status status-pending"><span class="status-dot"></span>Required — EU / CA launch</div>
+        <h3>GDPR / CCPA</h3>
+        <p>The backend collects only email address. No real location is ever processed server-side. A Data Protection Impact Assessment (DPIA) is required before EU launch. A DPO appointment may be required if user scale exceeds GDPR thresholds. CCPA compliance is lightweight given minimal PII collection.</p>
+      </div>
+
+      <div class="legal-card">
+        <div class="legal-card-status status-pending"><span class="status-dot"></span>Required — App Store</div>
+        <h3>Apple MDM Certificate</h3>
+        <p>The optional DNS privacy feature serves a signed <code style="font-family:'DM Mono',monospace;font-size:12px;">.mobileconfig</code> profile. Apple requires an MDM vendor certificate for signed profiles. Enrollment via Apple Business Manager or third-party MDM vendor program. Required to avoid "unsigned profile" warning in iOS Settings.</p>
+      </div>
+
+      <div class="legal-card">
+        <div class="legal-card-status status-pending"><span class="status-dot"></span>Review Risk — Ongoing</div>
+        <h3>App Store Guidelines</h3>
+        <p>App does not request <code style="font-family:'DM Mono',monospace;font-size:12px;">Always</code> location permission; the injection occurs on the hardware, not the app. Compliance with Guideline 5.4 (VPN &amp; DNS) and 4.3 (Spam) must be maintained. Legal review of app description framing recommended before first submission.</p>
+      </div>
+
+      <div class="legal-card">
+        <div class="legal-card-status status-pending"><span class="status-dot"></span>Pre-launch audit</div>
+        <h3>isSimulatedBySoftware Detection</h3>
+        <p>iOS sets a detectable flag on DVT-injected locations. Empirical testing of Find My, Life360, and Snapchat against this flag is required before launch. A security researcher audit is recommended. This is a product risk, not a legal one, but bears commercial impact.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- DETECTION RISKS -->
+<section id="risks">
+  <div class="container">
+    <div class="section-label">Known Limitations</div>
+    <h2 class="section-h2">Transparent risk register</h2>
+    <div class="risks-grid fade-up">
+
+      <div class="risk-item">
+        <div class="risk-severity sev-medium">Medium · Accepted</div>
+        <h3>isSimulatedBySoftware flag</h3>
+        <p>iOS marks DVT-injected locations with <code style="font-family:'DM Mono',monospace;font-size:12px;">CLLocationSourceInformation.isSimulatedBySoftware = true</code>. Any app checking this flag can detect simulation. Current testing of Find My and Life360 shows neither checks in production — but this must be verified empirically per app per update cycle.</p>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-severity sev-low">Low · Cosmetic</div>
+        <h3>Developer Mode indicator</h3>
+        <p>Developer Mode displays a visible indicator under Settings → Privacy & Security. A motivated inspector examining the phone's settings would notice it. Accepted for v2.0; no mitigation path exists without jailbreak.</p>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-severity sev-medium">Medium · Mitigatable</div>
+        <h3>Wi-Fi / cellular cross-check</h3>
+        <p>Location-tracking apps can independently query Apple/Google network-based location APIs using Wi-Fi scan data. This is a server-side cross-check the device cannot intercept. Mitigated via optional DNS blocking of Apple's location verification domains (<code style="font-family:'DM Mono',monospace;font-size:12px;">apple-dns.net</code>, <code style="font-family:'DM Mono',monospace;font-size:12px;">gsp1.apple.com</code>).</p>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-severity sev-low">Low · Physical</div>
+        <h3>USB cable requirement</h3>
+        <p>Session requires continuous USB connection. Disconnecting the cable causes iOS to revert to real GPS within 2–5 seconds. <code style="font-family:'DM Mono',monospace;font-size:12px;">ghostd</code> reconnects automatically within 30 seconds if cable is re-inserted. The cable itself is a physical tell that must be managed by the user.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="tech">
+  <div class="container">
+    <div class="section-label">Technology</div>
+    <h2 class="section-h2">Built entirely on<br>open components</h2>
+    <div class="tech-cols fade-up">
+      <div class="tech-col">
+        <h3>Device Firmware</h3>
+        <span class="tech-tag">Raspberry Pi OS Lite</span>
+        <span class="tech-tag">Python 3</span>
+        <span class="tech-tag">pymobiledevice3</span>
+        <span class="tech-tag">usbmuxd</span>
+        <span class="tech-tag">systemd</span>
+        <span class="tech-tag">SQLite</span>
+        <span class="tech-tag">GRF binary format</span>
+      </div>
+      <div class="tech-col">
+        <h3>iOS App</h3>
+        <span class="tech-tag">Swift / SwiftUI</span>
+        <span class="tech-tag">AFC protocol</span>
+        <span class="tech-tag">MapKit (static)</span>
+        <span class="tech-tag">CryptoKit</span>
+        <span class="tech-tag">BackgroundTasks</span>
+        <span class="tech-tag">Keychain</span>
+        <span class="tech-tag">No location perm</span>
+      </div>
+      <div class="tech-col">
+        <h3>Backend</h3>
+        <span class="tech-tag">Node.js 20 / Go</span>
+        <span class="tech-tag">PostgreSQL 16</span>
+        <span class="tech-tag">Redis 7</span>
+        <span class="tech-tag">Cloudflare R2</span>
+        <span class="tech-tag">JWT RS256</span>
+        <span class="tech-tag">AWS Fargate</span>
+        <span class="tech-tag">TLS 1.3</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="container">
+    <div class="section-label">Roadmap</div>
+    <h2 class="section-h2">Phase plan</h2>
+    <div class="roadmap-phases fade-up">
+      <div class="phase">
+        <div class="phase-label">Phase 1 · Now</div>
+        <h3>MVP Hardware + App</h3>
+        <ul>
+          <li>Pi Zero 2W carrier PCB designed</li>
+          <li>ghostd daemon — iOS 16–18 support</li>
+          <li>iOS companion app (session control)</li>
+          <li>10 curated cover routes at launch</li>
+          <li>FCC Part 15B certification</li>
+          <li>Route transfer over USB (AFC)</li>
+          <li>Compact + Extended battery SKUs</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="phase-label">Phase 2 · +3–6 months</div>
+        <h3>Polish + Scale</h3>
+        <ul>
+          <li>CE / RED EU certification</li>
+          <li>50+ curated routes (10 cities)</li>
+          <li>In-app route recording (on-phone GPS)</li>
+          <li>Route marketplace (Pro tier)</li>
+          <li>OTA firmware update flow</li>
+          <li>DNS privacy mode (signed profile)</li>
+          <li>VoiceOver / accessibility</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="phase-label">Phase 3 · +9–12 months</div>
+        <h3>Platform</h3>
+        <ul>
+          <li>Android support via ADB mock location</li>
+          <li>Custom enclosure (injection-molded)</li>
+          <li>Route sharing / community library</li>
+          <li>Multi-device pairing (one Ghost per phone)</li>
+          <li>API for enterprise / safety org. use</li>
+          <li>Localization: ES, FR, DE</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Ghost</div>
+  <div class="footer-note">Confidential · Investor Preview · v2.0 · 2026-03-24</div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+  // ─── Three.js Ghost Device render ───
+  (function() {
+    const canvas = document.getElementById('ghost-canvas');
+
+    // Size canvas to its container width, square aspect
+    function getSize() {
+      return Math.min(canvas.parentElement.clientWidth, 420);
+    }
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(2.8, 2.2, 3.8);
+    camera.lookAt(0, 0.1, 0);
+
+    function resize() {
+      const s = getSize();
+      canvas.style.height = s + 'px';
+      renderer.setSize(s, s, false);
+    }
+    resize();
+
+    // Resize when container changes
+    if (window.ResizeObserver) {
+      new ResizeObserver(resize).observe(canvas.parentElement);
+    }
+    window.addEventListener('resize', resize);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf7f6f4);
+
+    // Lights
+    const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+    scene.add(ambient);
+
+    const key = new THREE.DirectionalLight(0xffffff, 0.9);
+    key.position.set(4, 6, 4);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 20;
+    key.shadow.camera.left = -3;
+    key.shadow.camera.right = 3;
+    key.shadow.camera.top = 3;
+    key.shadow.camera.bottom = -3;
+    scene.add(key);
+
+    const fill = new THREE.DirectionalLight(0xe8e4ff, 0.3);
+    fill.position.set(-3, 2, -2);
+    scene.add(fill);
+
+    const rim = new THREE.DirectionalLight(0xfff8f0, 0.25);
+    rim.position.set(0, -2, -4);
+    scene.add(rim);
+
+    // ── Body: 2" × 2" × 3" scaled to ~1 × 1 × 1.5 units ──
+    const bW = 1.0, bH = 1.5, bD = 1.0;
+    const bodyGeo = new THREE.BoxGeometry(bW, bH, bD, 1, 1, 1);
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: 0xf0ece6,
+      roughness: 0.55,
+      metalness: 0.02,
+    });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.castShadow = true;
+    body.receiveShadow = true;
+    scene.add(body);
+
+    // Subtle edge bevel — thin slightly-darker outline box
+    const edgeGeo = new THREE.EdgesGeometry(bodyGeo);
+    const edgeMat = new THREE.LineBasicMaterial({ color: 0xc8c2b8, linewidth: 1 });
+    const edges = new THREE.LineSegments(edgeGeo, edgeMat);
+    body.add(edges);
+
+    // ── LED on top face ──
+    const ledGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.025, 16);
+    const ledMat = new THREE.MeshStandardMaterial({
+      color: 0x44ee88, emissive: 0x22cc66, emissiveIntensity: 1.2,
+      roughness: 0.2, metalness: 0.1,
+    });
+    const led = new THREE.Mesh(ledGeo, ledMat);
+    led.position.set(0.28, bH / 2 + 0.013, -0.2);
+    scene.add(led);
+
+    // LED glow point light
+    const ledLight = new THREE.PointLight(0x44ee88, 0.6, 0.6);
+    ledLight.position.copy(led.position);
+    scene.add(ledLight);
+
+    // ── Button on front face ──
+    const btnGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.02, 24);
+    const btnMat = new THREE.MeshStandardMaterial({ color: 0xd8d2ca, roughness: 0.6, metalness: 0.05 });
+    const btn = new THREE.Mesh(btnGeo, btnMat);
+    btn.rotation.x = Math.PI / 2;
+    btn.position.set(0, 0, bD / 2 + 0.011);
+    scene.add(btn);
+
+    // ── USB-C ports on left and right faces ──
+    function makeUsbPort(side) {
+      const group = new THREE.Group();
+      // Outer shell
+      const outerGeo = new THREE.BoxGeometry(0.02, 0.07, 0.13);
+      const outerMat = new THREE.MeshStandardMaterial({ color: 0xa8a29a, roughness: 0.4, metalness: 0.5 });
+      const outer = new THREE.Mesh(outerGeo, outerMat);
+      // Inner recess (dark)
+      const innerGeo = new THREE.BoxGeometry(0.022, 0.045, 0.11);
+      const innerMat = new THREE.MeshStandardMaterial({ color: 0x3a3530, roughness: 0.9, metalness: 0.0 });
+      const inner = new THREE.Mesh(innerGeo, innerMat);
+      inner.position.x = side * 0.002;
+      group.add(outer);
+      group.add(inner);
+      return group;
+    }
+
+    const portL = makeUsbPort(-1);
+    portL.position.set(-bW / 2 - 0.01, -0.3, 0.1);
+    scene.add(portL);
+
+    const portR = makeUsbPort(1);
+    portR.position.set(bW / 2 + 0.01, -0.3, 0.1);
+    scene.add(portR);
+
+    // ── Ground shadow plane ──
+    const groundGeo = new THREE.PlaneGeometry(8, 8);
+    const groundMat = new THREE.ShadowMaterial({ opacity: 0.08 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -bH / 2 - 0.01;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // ── Ghost wordmark as texture on top ──
+    const wordmarkTex = (() => {
+      const cvs = document.createElement('canvas');
+      cvs.width = 256; cvs.height = 256;
+      const ctx = cvs.getContext('2d');
+      ctx.clearRect(0, 0, 256, 256);
+      ctx.fillStyle = 'rgba(160,154,146,0.75)';
+      ctx.font = '600 28px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('G H O S T', 128, 128);
+      return new THREE.CanvasTexture(cvs);
+    })();
+    const decalGeo = new THREE.PlaneGeometry(0.7, 0.7);
+    const decalMat = new THREE.MeshStandardMaterial({ map: wordmarkTex, transparent: true, roughness: 0.55, depthWrite: false });
+    const decal = new THREE.Mesh(decalGeo, decalMat);
+    decal.rotation.x = -Math.PI / 2;
+    decal.position.set(-0.05, bH / 2 + 0.001, 0.05);
+
+    // ── Mouse drag orbit ──
+    let isDragging = false, prevX = 0, prevY = 0;
+    let rotX = 0.3, rotY = -0.5;
+    const pivot = new THREE.Group();
+    scene.add(pivot);
+    // Add all world objects into pivot
+    [body, led, ledLight, btn, portL, portR, decal].forEach(o => pivot.add(o));
+
+    canvas.addEventListener('mousedown', e => { isDragging = true; prevX = e.clientX; prevY = e.clientY; canvas.style.cursor = 'grabbing'; });
+    window.addEventListener('mouseup', () => { isDragging = false; canvas.style.cursor = 'grab'; });
+    window.addEventListener('mousemove', e => {
+      if (!isDragging) return;
+      rotY += (e.clientX - prevX) * 0.012;
+      rotX += (e.clientY - prevY) * 0.012;
+      rotX = Math.max(-0.8, Math.min(0.9, rotX));
+      prevX = e.clientX; prevY = e.clientY;
+    });
+    canvas.addEventListener('touchstart', e => {
+      isDragging = true;
+      prevX = e.touches[0].clientX;
+      prevY = e.touches[0].clientY;
+    }, { passive: true });
+    window.addEventListener('touchend', () => isDragging = false);
+    // Non-passive so we can preventDefault and block page scroll during rotate
+    canvas.addEventListener('touchmove', e => {
+      if (!isDragging) return;
+      e.preventDefault();
+      rotY += (e.touches[0].clientX - prevX) * 0.016;
+      rotX += (e.touches[0].clientY - prevY) * 0.016;
+      rotX = Math.max(-0.8, Math.min(0.9, rotX));
+      prevX = e.touches[0].clientX;
+      prevY = e.touches[0].clientY;
+    }, { passive: false });
+
+    // ── LED pulse animation ──
+    let t = 0;
+    function animate() {
+      requestAnimationFrame(animate);
+      t += 0.03;
+      // Gentle auto-rotate when not dragging
+      if (!isDragging) rotY += 0.004;
+      pivot.rotation.x = rotX;
+      pivot.rotation.y = rotY;
+      // LED breathe
+      const pulse = 0.7 + 0.5 * Math.sin(t);
+      ledMat.emissiveIntensity = pulse;
+      ledLight.intensity = pulse * 0.5;
+      renderer.render(scene, camera);
+    }
+    animate();
+  })();
+
+  // ─── Intersection Observer for fade-up ───
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

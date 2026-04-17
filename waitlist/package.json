@@ -1,0 +1,13 @@
+{
+    "name": "ghost-waitlist",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "start": "node server.js",
+        "migrate": "node migrate.js"
+    },
+    "dependencies": {
+        "express": "^4.19.2",
+        "pg": "^8.11.5"
+    }
+}

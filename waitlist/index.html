@@ -1,0 +1,1846 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Ghost — Location Privacy Hardware</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Syne:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            :root {
+                --bg: #060606;
+                --bg2: #0d0d0d;
+                --surface: #111111;
+                --border: rgba(255, 255, 255, 0.06);
+                --border-hi: rgba(255, 255, 255, 0.15);
+                --text: #f0ede8;
+                --muted: #5a5754;
+                --dim: #2e2d2b;
+                --accent: #e8e4de;
+                --green: #3ddc84;
+                --green-dim: rgba(61, 220, 132, 0.08);
+                --mono: "Fragment Mono", monospace;
+                --sans: "Syne", sans-serif;
+            }
+
+            html {
+                scroll-behavior: smooth;
+            }
+            body {
+                font-family: var(--sans);
+                background: var(--bg);
+                color: var(--text);
+                -webkit-font-smoothing: antialiased;
+                overflow-x: hidden;
+                cursor: crosshair;
+            }
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+                opacity: 0.022;
+                pointer-events: none;
+                z-index: 9999;
+            }
+
+            /* NAV */
+            nav {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 800;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 40px;
+                height: 54px;
+                border-bottom: 1px solid var(--border);
+                background: rgba(6, 6, 6, 0.75);
+                backdrop-filter: blur(24px);
+            }
+            .nav-logo {
+                font-family: var(--mono);
+                font-size: 12px;
+                letter-spacing: 0.3em;
+                text-transform: uppercase;
+                color: var(--text);
+            }
+            .nav-right {
+                display: flex;
+                align-items: center;
+                gap: 32px;
+            }
+            .nav-status {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.08em;
+            }
+            .status-dot {
+                width: 5px;
+                height: 5px;
+                border-radius: 50%;
+                background: var(--green);
+                animation: pdot 2.5s ease-in-out infinite;
+            }
+            @keyframes pdot {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.25;
+                }
+            }
+            .nav-cta {
+                font-family: var(--mono);
+                font-size: 10px;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--bg);
+                background: var(--text);
+                border: none;
+                padding: 8px 16px;
+                cursor: crosshair;
+                transition: opacity 0.2s;
+            }
+            .nav-cta:hover {
+                opacity: 0.75;
+            }
+
+            /* HERO */
+            #hero {
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                padding: 0 40px 60px;
+                position: relative;
+                overflow: hidden;
+            }
+
+            #globe-canvas {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 680px;
+                height: 680px;
+                pointer-events: none;
+                opacity: 0.3;
+            }
+
+            .scan-line {
+                position: absolute;
+                left: 0;
+                right: 0;
+                height: 1px;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(61, 220, 132, 0.4),
+                    transparent
+                );
+                animation: scan 6s linear infinite;
+                pointer-events: none;
+            }
+            @keyframes scan {
+                0% {
+                    top: -2px;
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 1;
+                }
+                90% {
+                    opacity: 1;
+                }
+                100% {
+                    top: 100%;
+                    opacity: 0;
+                }
+            }
+
+            .hero-coords {
+                position: absolute;
+                top: 80px;
+                right: 40px;
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.06em;
+                text-align: right;
+                line-height: 1.8;
+            }
+            .hero-coords .redacted {
+                color: var(--green);
+            }
+
+            .hero-tag {
+                font-family: var(--mono);
+                font-size: 10px;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                color: var(--muted);
+                margin-bottom: 28px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+            .hero-tag::before {
+                content: "";
+                display: block;
+                width: 32px;
+                height: 1px;
+                background: var(--dim);
+            }
+
+            h1 {
+                font-family: var(--sans);
+                font-size: clamp(64px, 9vw, 128px);
+                font-weight: 800;
+                line-height: 0.9;
+                letter-spacing: -0.04em;
+                max-width: 900px;
+                margin-bottom: 0;
+            }
+            h1 .ghost-word {
+                display: block;
+                background: linear-gradient(180deg, #f0ede8 0%, #4a4845 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            h1 .sub-word {
+                display: block;
+                color: var(--dim);
+            }
+
+            .hero-bottom {
+                display: flex;
+                align-items: flex-end;
+                justify-content: space-between;
+                margin-top: 48px;
+                padding-top: 32px;
+                border-top: 1px solid var(--border);
+            }
+            .hero-sub {
+                font-size: 14px;
+                color: var(--muted);
+                max-width: 340px;
+                line-height: 1.7;
+                font-weight: 400;
+            }
+            .hero-sub strong {
+                color: var(--text);
+                font-weight: 500;
+            }
+
+            .hero-action {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 12px;
+            }
+            .scroll-hint {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+            }
+
+            /* LOCATION SECTION */
+            #location {
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 120px 40px;
+                position: relative;
+                text-align: center;
+                border-top: 1px solid var(--border);
+            }
+
+            .location-label {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                margin-bottom: 48px;
+            }
+
+            .location-display {
+                font-family: var(--mono);
+                font-size: clamp(14px, 2vw, 22px);
+                color: var(--muted);
+                letter-spacing: 0.04em;
+                margin-bottom: 16px;
+                transition: all 0.4s ease;
+            }
+            .location-display .live-coord {
+                color: var(--text);
+            }
+            .location-display.spoofed .live-coord {
+                color: var(--green);
+            }
+
+            .location-city {
+                font-family: var(--sans);
+                font-size: clamp(42px, 7vw, 88px);
+                font-weight: 800;
+                letter-spacing: -0.04em;
+                line-height: 0.95;
+                color: var(--text);
+                margin-bottom: 12px;
+                min-height: 1.1em;
+                transition: all 0.4s ease;
+            }
+            .location-city.spoofed {
+                color: var(--green);
+            }
+
+            .location-caption {
+                font-family: var(--mono);
+                font-size: 11px;
+                color: var(--muted);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                margin-top: 16px;
+                opacity: 0;
+                transition: opacity 0.6s;
+            }
+            .location-caption.visible {
+                opacity: 1;
+            }
+
+            .spoof-btn {
+                margin-top: 48px;
+                font-family: var(--mono);
+                font-size: 11px;
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                color: var(--text);
+                background: transparent;
+                border: 1px solid var(--border-hi);
+                padding: 14px 32px;
+                cursor: crosshair;
+                transition: all 0.2s;
+            }
+            .spoof-btn:hover {
+                border-color: var(--green);
+                color: var(--green);
+                background: var(--green-dim);
+            }
+            .spoof-btn.active {
+                border-color: var(--green);
+                color: var(--green);
+                background: var(--green-dim);
+            }
+
+            .location-disclaimer {
+                margin-top: 32px;
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.06em;
+            }
+
+            /* ROUTES */
+            #routes {
+                border-top: 1px solid var(--border);
+                padding: 120px 40px;
+            }
+            .section-header {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                margin-bottom: 64px;
+            }
+            .section-tag {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+            }
+            .section-h2 {
+                font-family: var(--sans);
+                font-size: clamp(32px, 4vw, 52px);
+                font-weight: 700;
+                letter-spacing: -0.03em;
+                line-height: 1.05;
+                max-width: 480px;
+            }
+            .route-count {
+                font-family: var(--mono);
+                font-size: 11px;
+                color: var(--muted);
+                letter-spacing: 0.06em;
+            }
+
+            .route-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 1px;
+                background: var(--border);
+                border: 1px solid var(--border);
+            }
+            .route-card {
+                background: var(--bg);
+                padding: 28px 24px;
+                cursor: crosshair;
+                transition: background 0.2s;
+                position: relative;
+                overflow: hidden;
+            }
+            .route-card:hover {
+                background: var(--surface);
+            }
+            .route-card::after {
+                content: "";
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: var(--green);
+                transform: scaleX(0);
+                transform-origin: left;
+                transition: transform 0.3s ease;
+            }
+            .route-card:hover::after {
+                transform: scaleX(1);
+            }
+            .route-city {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                margin-bottom: 10px;
+            }
+            .route-name {
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text);
+                margin-bottom: 16px;
+                line-height: 1.3;
+            }
+            .route-meta {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+            .route-meta span {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+            }
+            .route-meta .val {
+                color: var(--text);
+            }
+
+            /* HOW IT WORKS */
+            #how {
+                border-top: 1px solid var(--border);
+                padding: 120px 40px;
+            }
+            .steps-layout {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 80px;
+                align-items: start;
+            }
+            .steps-left {
+            }
+            .steps-left .section-tag {
+                margin-bottom: 32px;
+                display: block;
+            }
+            .steps-left h2 {
+                font-size: clamp(32px, 4vw, 52px);
+                font-weight: 700;
+                letter-spacing: -0.03em;
+                line-height: 1.05;
+                margin-bottom: 48px;
+            }
+
+            .step-list {
+                display: flex;
+                flex-direction: column;
+            }
+            .step-item {
+                display: flex;
+                gap: 24px;
+                padding: 28px 0;
+                border-bottom: 1px solid var(--border);
+                cursor: crosshair;
+                transition: all 0.2s;
+            }
+            .step-item:first-child {
+                border-top: 1px solid var(--border);
+            }
+            .step-item:hover .step-body {
+                color: var(--text);
+            }
+            .step-num {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--dim);
+                padding-top: 3px;
+                letter-spacing: 0.08em;
+                flex-shrink: 0;
+            }
+            .step-body {
+            }
+            .step-title {
+                font-size: 15px;
+                font-weight: 600;
+                color: var(--text);
+                margin-bottom: 6px;
+            }
+            .step-desc {
+                font-size: 13px;
+                color: var(--muted);
+                line-height: 1.65;
+            }
+            .step-desc code {
+                font-family: var(--mono);
+                font-size: 11px;
+                color: var(--text);
+                background: var(--surface);
+                padding: 1px 5px;
+                border: 1px solid var(--border);
+            }
+
+            .steps-right {
+                position: sticky;
+                top: 120px;
+            }
+            .terminal {
+                background: var(--bg2);
+                border: 1px solid var(--border);
+                font-family: var(--mono);
+                font-size: 12px;
+                overflow: hidden;
+            }
+            .terminal-bar {
+                background: var(--surface);
+                padding: 10px 16px;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .t-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+            }
+            .t-dot.r {
+                background: #ff5f57;
+            }
+            .t-dot.y {
+                background: #ffbd2e;
+            }
+            .t-dot.g {
+                background: #28ca42;
+            }
+            .terminal-title {
+                font-size: 10px;
+                color: var(--muted);
+                margin-left: auto;
+                letter-spacing: 0.06em;
+            }
+            .terminal-body {
+                padding: 24px;
+                line-height: 2;
+                overflow-x: auto;
+            }
+            .t-dim {
+                color: var(--muted);
+            }
+            .t-green {
+                color: var(--green);
+            }
+            .t-text {
+                color: var(--text);
+            }
+            .t-muted {
+                color: #3a3835;
+            }
+            .t-cursor {
+                display: inline-block;
+                width: 7px;
+                height: 13px;
+                background: var(--green);
+                animation: blink 1s step-end infinite;
+                vertical-align: -2px;
+            }
+            @keyframes blink {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0;
+                }
+            }
+
+            /* PROTOCOL */
+            .protocol-strip {
+                border-top: 1px solid var(--border);
+                border-bottom: 1px solid var(--border);
+                padding: 32px 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0;
+                overflow-x: auto;
+                background: var(--bg2);
+            }
+            .proto-node {
+                flex-shrink: 0;
+                padding: 16px 20px;
+                border: 1px solid var(--border);
+                background: var(--bg);
+            }
+            .proto-node-title {
+                font-size: 12px;
+                font-weight: 600;
+                color: var(--text);
+                margin-bottom: 4px;
+            }
+            .proto-node-sub {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+            }
+            .proto-arr {
+                flex-shrink: 0;
+                padding: 0 20px;
+                color: var(--dim);
+                font-size: 16px;
+            }
+            .proto-note {
+                flex-shrink: 0;
+                margin-left: auto;
+                padding-left: 40px;
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.06em;
+                white-space: nowrap;
+            }
+
+            /* COMPLIANCE */
+            #compliance {
+                border-top: 1px solid var(--border);
+                padding: 120px 40px;
+            }
+            .compliance-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1px;
+                background: var(--border);
+                border: 1px solid var(--border);
+                margin-top: 64px;
+            }
+            .compliance-cell {
+                background: var(--bg);
+                padding: 28px 24px;
+            }
+            .cc-status {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                font-family: var(--mono);
+                font-size: 10px;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                margin-bottom: 14px;
+            }
+            .cc-dot {
+                width: 5px;
+                height: 5px;
+                border-radius: 50%;
+            }
+            .cc-dot.clear {
+                background: var(--green);
+            }
+            .cc-dot.pending {
+                background: #f5a623;
+            }
+            .cc-dot.required {
+                background: #ff4444;
+            }
+            .cc-status.clear {
+                color: var(--green);
+            }
+            .cc-status.pending {
+                color: #f5a623;
+            }
+            .cc-status.required {
+                color: #ff4444;
+            }
+            .cc-title {
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text);
+                margin-bottom: 8px;
+            }
+            .cc-desc {
+                font-size: 12px;
+                color: var(--muted);
+                line-height: 1.65;
+            }
+
+            /* STATS ROW */
+            .stats-row {
+                border-top: 1px solid var(--border);
+                border-bottom: 1px solid var(--border);
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                background: var(--border);
+                gap: 1px;
+            }
+            .stat-cell {
+                background: var(--bg);
+                padding: 40px 32px;
+            }
+            .stat-num {
+                font-family: var(--sans);
+                font-size: clamp(36px, 4vw, 56px);
+                font-weight: 800;
+                letter-spacing: -0.04em;
+                line-height: 1;
+                margin-bottom: 8px;
+            }
+            .stat-label {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+            /* WAITLIST */
+            #waitlist {
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 120px 40px;
+                border-top: 1px solid var(--border);
+                position: relative;
+                overflow: hidden;
+            }
+
+            #waitlist::before {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 600px;
+                height: 600px;
+                background: radial-gradient(
+                    circle,
+                    rgba(61, 220, 132, 0.04) 0%,
+                    transparent 70%
+                );
+                pointer-events: none;
+            }
+
+            .waitlist-inner {
+                max-width: 560px;
+                width: 100%;
+                text-align: center;
+            }
+            .waitlist-tag {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                margin-bottom: 32px;
+            }
+            .waitlist-h2 {
+                font-size: clamp(42px, 6vw, 80px);
+                font-weight: 800;
+                letter-spacing: -0.04em;
+                line-height: 0.95;
+                margin-bottom: 24px;
+            }
+            .waitlist-sub {
+                font-size: 14px;
+                color: var(--muted);
+                line-height: 1.7;
+                margin-bottom: 48px;
+            }
+
+            .form-row {
+                display: flex;
+                gap: 0;
+                border: 1px solid var(--border-hi);
+            }
+            .form-row input[type="email"] {
+                flex: 1;
+                background: transparent;
+                border: none;
+                outline: none;
+                font-family: var(--mono);
+                font-size: 13px;
+                color: var(--text);
+                padding: 16px 20px;
+                letter-spacing: 0.04em;
+            }
+            .form-row input[type="email"]::placeholder {
+                color: var(--muted);
+            }
+            .form-row button {
+                font-family: var(--mono);
+                font-size: 11px;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--bg);
+                background: var(--text);
+                border: none;
+                padding: 16px 28px;
+                cursor: crosshair;
+                transition: opacity 0.2s;
+                flex-shrink: 0;
+            }
+            .form-row button:hover {
+                opacity: 0.8;
+            }
+
+            .form-extras {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 16px;
+            }
+            .form-extras span {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.06em;
+            }
+
+            .waitlist-count {
+                margin-top: 48px;
+                padding-top: 32px;
+                border-top: 1px solid var(--border);
+                font-family: var(--mono);
+                font-size: 11px;
+                color: var(--muted);
+                letter-spacing: 0.08em;
+            }
+            .waitlist-count strong {
+                color: var(--text);
+            }
+
+            .success-msg {
+                display: none;
+                margin-top: 24px;
+                font-family: var(--mono);
+                font-size: 12px;
+                color: var(--green);
+                letter-spacing: 0.08em;
+                padding: 16px;
+                border: 1px solid rgba(61, 220, 132, 0.2);
+                background: var(--green-dim);
+            }
+
+            /* FOOTER */
+            footer {
+                padding: 32px 40px;
+                border-top: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .footer-logo {
+                font-family: var(--mono);
+                font-size: 11px;
+                letter-spacing: 0.3em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+            .footer-links {
+                display: flex;
+                gap: 32px;
+            }
+            .footer-links a {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                text-decoration: none;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                transition: color 0.2s;
+            }
+            .footer-links a:hover {
+                color: var(--text);
+            }
+            .footer-note {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--dim);
+                letter-spacing: 0.06em;
+            }
+
+            /* ANIMATIONS */
+            .fade-in {
+                opacity: 0;
+                transform: translateY(20px);
+                transition:
+                    opacity 0.8s ease,
+                    transform 0.8s ease;
+            }
+            .fade-in.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            /* RESPONSIVE */
+            @media (max-width: 900px) {
+                nav {
+                    padding: 0 20px;
+                }
+                #hero {
+                    padding: 0 20px 48px;
+                }
+                h1 {
+                    font-size: clamp(52px, 12vw, 80px);
+                }
+                #globe-canvas {
+                    width: 420px;
+                    height: 420px;
+                }
+                .route-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                .steps-layout {
+                    grid-template-columns: 1fr;
+                }
+                .steps-right {
+                    position: static;
+                }
+                .compliance-grid {
+                    grid-template-columns: 1fr;
+                }
+                .stats-row {
+                    grid-template-columns: 1fr 1fr;
+                }
+                .protocol-strip {
+                    padding: 24px 20px;
+                }
+                #routes,
+                #how,
+                #compliance,
+                #waitlist,
+                #location {
+                    padding: 80px 20px;
+                }
+                footer {
+                    flex-direction: column;
+                    gap: 16px;
+                    text-align: center;
+                    padding: 24px 20px;
+                }
+                .footer-links {
+                    flex-wrap: wrap;
+                    justify-content: center;
+                }
+                .section-header {
+                    flex-direction: column;
+                    gap: 16px;
+                }
+                .hero-coords {
+                    display: none;
+                }
+                .hero-bottom {
+                    flex-direction: column;
+                    gap: 32px;
+                    align-items: flex-start;
+                }
+                .hero-action {
+                    align-items: flex-start;
+                }
+                .form-row {
+                    flex-direction: column;
+                }
+                .form-row button {
+                    width: 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- NAV -->
+        <nav>
+            <div class="nav-logo">Ghost</div>
+            <div class="nav-right">
+                <div class="nav-status">
+                    <div class="status-dot"></div>
+                    <span>Collecting waitlist</span>
+                </div>
+                <button
+                    class="nav-cta"
+                    onclick="
+                        document
+                            .getElementById('waitlist')
+                            .scrollIntoView({ behavior: 'smooth' })
+                    "
+                >
+                    Join waitlist
+                </button>
+            </div>
+        </nav>
+
+        <!-- HERO -->
+        <section id="hero">
+            <canvas id="globe-canvas"></canvas>
+            <div class="scan-line"></div>
+
+            <div class="hero-coords">
+                <div>LAT <span class="redacted" id="hero-lat">——.——</span></div>
+                <div>LON <span class="redacted" id="hero-lon">——.——</span></div>
+                <div style="margin-top: 8px; color: #2e2d2b">
+                    SIGNAL OVERRIDDEN
+                </div>
+                <div style="color: #2e2d2b">DVT TUNNEL ACTIVE</div>
+            </div>
+
+            <div class="container fade-in">
+                <div class="hero-tag">Location Privacy Hardware · v2.0</div>
+                <h1>
+                    <span class="ghost-word">Ghost</span>
+                    <span class="sub-word">invisible</span>
+                </h1>
+                <div class="hero-bottom">
+                    <p class="hero-sub">
+                        A pocketable USB device that overrides an iPhone's GPS
+                        at the OS level.
+                        <strong>Every app sees a cover route.</strong> No
+                        jailbreak. No MFi. No trace.
+                    </p>
+                    <div class="hero-action">
+                        <span class="scroll-hint">↓ scroll</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LIVE LOCATION DEMO -->
+        <section id="location">
+            <div class="location-label">Your signal right now</div>
+            <div class="location-display" id="loc-coords">
+                <span class="live-coord" id="live-lat">Detecting...</span>
+                <span style="color: var(--dim)"> / </span>
+                <span class="live-coord" id="live-lon"></span>
+            </div>
+            <div class="location-city" id="loc-city">——</div>
+            <div class="location-caption" id="loc-caption">
+                This is what Find My, Life360, and Snapchat see
+            </div>
+
+            <button class="spoof-btn" id="spoof-btn" onclick="toggleSpoof()">
+                Override with cover route →
+            </button>
+            <div class="location-disclaimer">
+                Ghost replaces this signal system-wide · All apps affected
+                simultaneously
+            </div>
+        </section>
+
+        <!-- STATS -->
+        <div class="stats-row fade-in">
+            <div class="stat-cell">
+                <div class="stat-num">&lt;15s</div>
+                <div class="stat-label">Connect → active session</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-num">100%</div>
+                <div class="stat-label">System-wide override</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-num">8 hrs</div>
+                <div class="stat-label">Battery · compact SKU</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-num">$150</div>
+                <div class="stat-label">Price</div>
+            </div>
+        </div>
+
+        <!-- PROTOCOL STRIP -->
+        <div class="protocol-strip">
+            <div class="proto-node">
+                <div class="proto-node-title">Ghost Device</div>
+                <div class="proto-node-sub">ghostd · pymobiledevice3</div>
+            </div>
+            <div class="proto-arr">→</div>
+            <div class="proto-node">
+                <div class="proto-node-title">USB-C</div>
+                <div class="proto-node-sub">usbmuxd · CDC-NCM</div>
+            </div>
+            <div class="proto-arr">→</div>
+            <div class="proto-node">
+                <div class="proto-node-title">lockdownd</div>
+                <div class="proto-node-sub">iOS trusted channel</div>
+            </div>
+            <div class="proto-arr">→</div>
+            <div class="proto-node">
+                <div class="proto-node-title">DVT simulate-location</div>
+                <div class="proto-node-sub">developer services</div>
+            </div>
+            <div class="proto-arr">→</div>
+            <div class="proto-node">
+                <div class="proto-node-title">locationd</div>
+                <div class="proto-node-sub">iOS system daemon</div>
+            </div>
+            <div class="proto-arr">→</div>
+            <div class="proto-node">
+                <div class="proto-node-title">All apps</div>
+                <div class="proto-node-sub">Find My · Life360 · Snap</div>
+            </div>
+        </div>
+
+        <!-- HOW IT WORKS -->
+        <section id="how">
+            <div class="steps-layout">
+                <div class="steps-left fade-in">
+                    <span class="section-tag">Protocol</span>
+                    <h2>The same API<br />Apple uses in<br />Xcode</h2>
+                    <div class="step-list">
+                        <div class="step-item">
+                            <span class="step-num">01</span>
+                            <div class="step-body">
+                                <div class="step-title">USB detection</div>
+                                <div class="step-desc">
+                                    <code>Ghost</code> detects the phone and
+                                    authenticates with your stored pairing
+                                    record. No re-prompt after first setup.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <span class="step-num">02</span>
+                            <div class="step-body">
+                                <div class="step-title">DVT tunnel</div>
+                                <div class="step-desc">
+                                    An encrypted RemoteXPC tunnel opens to iOS
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <span class="step-num">03</span>
+                            <div class="step-body">
+                                <div class="step-title">Location injection</div>
+                                <div class="step-desc">
+                                    The <code>Ghost</code> device
+                                    feeds coordinates into
+                                    <code>locationd</code> at 1Hz. Every app
+                                    reading location sees the
+                                    cover route.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <span class="step-num">04</span>
+                            <div class="step-body">
+                                <div class="step-title">
+                                    Believability layer
+                                </div>
+                                <div class="step-desc">
+                                    Gaussian jitter (σ=1.5m), variable accuracy,
+                                    smooth altitude variation — the trace is
+                                    statistically indistinguishable from real
+                                    GPS output.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steps-right fade-in">
+                    <div class="terminal">
+                        <div class="terminal-bar">
+                            <div class="t-dot r"></div>
+                            <div class="t-dot y"></div>
+                            <div class="t-dot g"></div>
+                            <div class="terminal-title">ghost-init.sh</div>
+                        </div>
+                        <div class="terminal-body">
+                            <span class="t-dim">08:14:02</span>
+                            <span class="t-text"
+                                >→ Checking system dependencies...</span
+                            ><br />
+                            <span class="t-green">✓</span>
+                            <span class="t-text">System packages present.</span
+                            ><br />
+                            <span class="t-green">✓</span>
+                            <span class="t-text"
+                                >pymobiledevice3 4.2.1 present.</span
+                            ><br />
+                            <span class="t-dim">08:14:03</span>
+                            <span class="t-text"
+                                >→ Checking for connected iPhone...</span
+                            ><br />
+                            <span class="t-green">✓</span>
+                            <span class="t-text">iPhone detected on USB.</span
+                            ><br />
+                            <span class="t-dim">08:14:03</span>
+                            <span class="t-text">→ Checking usbmuxd...</span
+                            ><br />
+                            <span class="t-green">✓</span>
+                            <span class="t-text"
+                                >usbmuxd socket: /run/usbmuxd</span
+                            ><br />
+                            <span class="t-dim">08:14:04</span>
+                            <span class="t-text"
+                                >→ Establishing DVT tunnel...</span
+                            ><br />
+                            <span class="t-green">✓</span>
+                            <span class="t-text">DVT tunnel up (PID 2847)</span
+                            ><br />
+                            <span class="t-dim">08:14:05</span>
+                            <span class="t-text"
+                                >→ Starting tunnel watchdog...</span
+                            ><br />
+                            <span class="t-green">✓</span>
+                            <span class="t-text">Watchdog started.</span><br />
+                            <br />
+                            <span class="t-dim"
+                                >━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span
+                            ><br />
+                            <span class="t-text">
+                                Ghost — starting route playback</span
+                            ><br />
+                            <span class="t-dim"
+                                >━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span
+                            ><br />
+                            <br />
+                            <span class="t-green">✓</span>
+                            <span class="t-text"
+                                >Loaded GPX: 3600 waypoints, 60.0 min</span
+                            ><br />
+                            <span class="t-green">✓</span>
+                            <span class="t-text">RSD tunnel: ::1:49285</span
+                            ><br />
+                            <span class="t-green">✓</span>
+                            <span class="t-text"
+                                >DVT session open — streaming.</span
+                            ><br />
+                            <br />
+                            <span class="t-dim"> 00:00</span>
+                            <span class="t-green"
+                                >[████████████████░░░░░░░░░░░░]</span
+                            >
+                            <span class="t-text">58.2%</span><br />
+                            <span class="t-dim">
+                                wp 2095/3600 (41.88102, -87.62832) 1x</span
+                            ><br />
+                            <span class="t-muted">_</span
+                            ><span class="t-cursor"></span>
+                        </div>
+                    </div>
+
+                    <div
+                        style="
+                            margin-top: 16px;
+                            border: 1px solid var(--border);
+                            padding: 20px 24px;
+                            background: var(--bg2);
+                        "
+                    >
+                        <div
+                            style="
+                                font-family: var(--mono);
+                                font-size: 10px;
+                                color: var(--muted);
+                                letter-spacing: 0.12em;
+                                text-transform: uppercase;
+                                margin-bottom: 12px;
+                            "
+                        >
+                            Active route
+                        </div>
+                        <div
+                            style="
+                                font-size: 15px;
+                                font-weight: 600;
+                                margin-bottom: 4px;
+                            "
+                        >
+                            Lincoln Park Morning Walk
+                        </div>
+                        <div
+                            style="
+                                font-family: var(--mono);
+                                font-size: 11px;
+                                color: var(--muted);
+                            "
+                        >
+                            Chicago, IL · Loop · 3.2 km · 60 min
+                        </div>
+                        <div
+                            style="
+                                margin-top: 16px;
+                                height: 3px;
+                                background: var(--surface);
+                                border-radius: 2px;
+                            "
+                        >
+                            <div
+                                style="
+                                    height: 100%;
+                                    width: 58%;
+                                    background: var(--green);
+                                    border-radius: 2px;
+                                    transition: width 1s ease;
+                                "
+                                id="route-progress"
+                            ></div>
+                        </div>
+                        <div
+                            style="
+                                display: flex;
+                                justify-content: space-between;
+                                margin-top: 6px;
+                                font-family: var(--mono);
+                                font-size: 10px;
+                                color: var(--muted);
+                            "
+                        >
+                            <span>34:55 elapsed</span>
+                            <span>25:05 remaining</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ROUTES -->
+        <section id="routes">
+            <div class="section-header fade-in">
+                <div>
+                    <div class="section-tag" style="margin-bottom: 12px">
+                        Cover routes
+                    </div>
+                    <h2 class="section-h2">
+                        20 curated routes<br />across 5 cities
+                    </h2>
+                </div>
+                <div class="route-count">
+                    Launch library · expanding to 50+ in Phase 2 · Custom Routes
+                    Supported
+                </div>
+            </div>
+            <div class="route-grid fade-in">
+                <div class="route-card">
+                    <div class="route-city">Chicago, IL</div>
+                    <div class="route-name">Lincoln Park Morning Walk</div>
+                    <div class="route-meta">
+                        <span><span class="val">60 min</span> · Loop</span>
+                        <span><span class="val">3.2 km</span> · Walking</span>
+                        <span><span class="val">4–5 km/h</span></span>
+                    </div>
+                </div>
+                <div class="route-card">
+                    <div class="route-city">Chicago, IL</div>
+                    <div class="route-name">Wicker Park Afternoon</div>
+                    <div class="route-meta">
+                        <span><span class="val">45 min</span> · Loop</span>
+                        <span><span class="val">2.8 km</span> · Walking</span>
+                        <span><span class="val">3–5 km/h</span></span>
+                    </div>
+                </div>
+                <div class="route-card">
+                    <div class="route-city">New York, NY</div>
+                    <div class="route-name">Prospect Park Loop</div>
+                    <div class="route-meta">
+                        <span><span class="val">75 min</span> · Loop</span>
+                        <span><span class="val">5.1 km</span> · Walking</span>
+                        <span><span class="val">4–6 km/h</span></span>
+                    </div>
+                </div>
+                <div class="route-card">
+                    <div class="route-city">New York, NY</div>
+                    <div class="route-name">Brooklyn Heights Stroll</div>
+                    <div class="route-meta">
+                        <span><span class="val">40 min</span> · Loop</span>
+                        <span><span class="val">2.4 km</span> · Walking</span>
+                        <span><span class="val">3–4 km/h</span></span>
+                    </div>
+                </div>
+                <div class="route-card">
+                    <div class="route-city">Los Angeles, CA</div>
+                    <div class="route-name">Silver Lake Reservoir</div>
+                    <div class="route-meta">
+                        <span><span class="val">50 min</span> · Loop</span>
+                        <span><span class="val">4.0 km</span> · Walking</span>
+                        <span><span class="val">4–5 km/h</span></span>
+                    </div>
+                </div>
+                <div class="route-card">
+                    <div class="route-city">Los Angeles, CA</div>
+                    <div class="route-name">Runyon Canyon</div>
+                    <div class="route-meta">
+                        <span><span class="val">55 min</span> · Loop</span>
+                        <span><span class="val">3.6 km</span> · Walking</span>
+                        <span><span class="val">4–6 km/h</span></span>
+                    </div>
+                </div>
+                <div class="route-card">
+                    <div class="route-city">London, UK</div>
+                    <div class="route-name">Victoria Park Circuit</div>
+                    <div class="route-meta">
+                        <span><span class="val">45 min</span> · Loop</span>
+                        <span><span class="val">3.0 km</span> · Walking</span>
+                        <span><span class="val">4–5 km/h</span></span>
+                    </div>
+                </div>
+                <div class="route-card">
+                    <div class="route-city">London, UK</div>
+                    <div class="route-name">Hampstead Heath East</div>
+                    <div class="route-meta">
+                        <span><span class="val">80 min</span> · Loop</span>
+                        <span><span class="val">5.8 km</span> · Walking</span>
+                        <span><span class="val">4–6 km/h</span></span>
+                    </div>
+                </div>
+                <div class="route-card">
+                    <div class="route-city">Toronto, ON</div>
+                    <div class="route-name">High Park Morning</div>
+                    <div class="route-meta">
+                        <span><span class="val">60 min</span> · Loop</span>
+                        <span><span class="val">4.2 km</span> · Walking</span>
+                        <span><span class="val">4–5 km/h</span></span>
+                    </div>
+                </div>
+                <div class="route-card">
+                    <div class="route-city">Toronto, ON</div>
+                    <div class="route-name">Distillery District Walk</div>
+                    <div class="route-meta">
+                        <span><span class="val">35 min</span> · Loop</span>
+                        <span><span class="val">2.1 km</span> · Walking</span>
+                        <span><span class="val">3–4 km/h</span></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- WAITLIST -->
+        <section id="waitlist">
+            <div class="waitlist-inner fade-in">
+                <div class="waitlist-tag">Early access</div>
+                <h2 class="waitlist-h2">Stay<br />invisible</h2>
+                <p class="waitlist-sub">
+                    Ghost ships to the first 500 people on the waitlist. No
+                    spam; one email when we're ready.
+                </p>
+                <div class="form-row">
+                    <input
+                        type="email"
+                        id="email-input"
+                        placeholder="your@email.com"
+                        autocomplete="email"
+                    />
+                    <button onclick="handleSubmit()">Join →</button>
+                </div>
+                <div class="form-extras">
+                    <span>No card required</span>
+                    <span>Shipping Dec 2026</span>
+                </div>
+                <div class="success-msg" id="success-msg">
+                    You're on the list. We'll be in touch.
+                </div>
+                <div class="waitlist-count">
+                    <strong id="count-num">247</strong> people ahead of you
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <div class="footer-logo">Ghost</div>
+            <div class="footer-links">
+                <a href="#how">How it works</a>
+                <a href="#waitlist">Waitlist</a>
+            </div>
+            <div class="footer-note">
+                Confidential · Keep niche · v2.0 · 2026
+            </div>
+        </footer>
+
+        <script>
+            // ── Globe ─────────────────────────────────────────────────────────────────────
+            (function () {
+                const canvas = document.getElementById("globe-canvas");
+                const ctx = canvas.getContext("2d");
+                const DPR = Math.min(window.devicePixelRatio, 2);
+                const S = 680;
+                canvas.width = S * DPR;
+                canvas.height = S * DPR;
+                ctx.scale(DPR, DPR);
+
+                const cx = S / 2,
+                    cy = S / 2,
+                    R = S * 0.44;
+                let rot = 0;
+                let spoofActive = false;
+
+                // Lat/lon dot coords for cities (lat, lon)
+                const cities = [
+                    [41.88, -87.63, "Chicago"],
+                    [40.71, -74.01, "New York"],
+                    [34.05, -118.24, "Los Angeles"],
+                    [51.51, -0.13, "London"],
+                    [43.65, -79.38, "Toronto"],
+                    [48.85, 2.35, "Paris"],
+                    [35.68, 139.69, "Tokyo"],
+                    [-33.87, 151.21, "Sydney"],
+                    [19.43, -99.13, "Mexico City"],
+                    [-23.55, -46.63, "São Paulo"],
+                ];
+
+                function project(lat, lon, rotation) {
+                    const phi = ((90 - lat) * Math.PI) / 180;
+                    const theta = ((lon + rotation) * Math.PI) / 180;
+                    const x = R * Math.sin(phi) * Math.cos(theta);
+                    const z = R * Math.cos(phi);
+                    const y = R * Math.sin(phi) * Math.sin(theta);
+                    return { x: cx + x, y: cy - z, visible: y > -R * 0.1 };
+                }
+
+                function drawGlobe(rotation) {
+                    ctx.clearRect(0, 0, S, S);
+
+                    // Outer circle
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+                    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    // Latitude lines
+                    for (let lat = -60; lat <= 60; lat += 30) {
+                        const phi = ((90 - lat) * Math.PI) / 180;
+                        const r2 = R * Math.sin(phi);
+                        const yy = cy - R * Math.cos(phi);
+                        ctx.beginPath();
+                        ctx.ellipse(cx, yy, r2, r2 * 0.15, 0, 0, Math.PI * 2);
+                        ctx.strokeStyle = "rgba(255,255,255,0.04)";
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+
+                    // Longitude lines
+                    for (let lon = 0; lon < 360; lon += 30) {
+                        const theta = ((lon + rotation) * Math.PI) / 180;
+                        ctx.beginPath();
+                        for (let i = 0; i <= 60; i++) {
+                            const lat = -90 + i * 3;
+                            const phi = ((90 - lat) * Math.PI) / 180;
+                            const x = R * Math.sin(phi) * Math.cos(theta);
+                            const z = R * Math.cos(phi);
+                            const y = R * Math.sin(phi) * Math.sin(theta);
+                            if (y > -R * 0.05) {
+                                if (i === 0) ctx.moveTo(cx + x, cy - z);
+                                else ctx.lineTo(cx + x, cy - z);
+                            }
+                        }
+                        ctx.strokeStyle = "rgba(255,255,255,0.035)";
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+
+                    // City dots
+                    cities.forEach(([lat, lon]) => {
+                        const p = project(lat, lon, rotation);
+                        if (!p.visible) return;
+                        const color = spoofActive
+                            ? "rgba(61,220,132,"
+                            : "rgba(240,237,232,";
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+                        ctx.fillStyle = color + "0.7)";
+                        ctx.fill();
+                        // Pulse ring
+                        ctx.beginPath();
+                        ctx.arc(
+                            p.x,
+                            p.y,
+                            5 + Math.sin(Date.now() / 800 + lat) * 2,
+                            0,
+                            Math.PI * 2,
+                        );
+                        ctx.strokeStyle = color + "0.15)";
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    });
+
+                    // Cover route line (Chicago → Lincoln Park area, if spoofed)
+                    if (spoofActive) {
+                        const pts = [
+                            [41.921, -87.648],
+                            [41.918, -87.641],
+                            [41.912, -87.635],
+                            [41.905, -87.638],
+                            [41.9, -87.645],
+                            [41.905, -87.651],
+                            [41.913, -87.65],
+                            [41.921, -87.648],
+                        ];
+                        ctx.beginPath();
+                        let first = true;
+                        pts.forEach(([lat, lon]) => {
+                            const p = project(lat, lon, rotation);
+                            if (p.visible) {
+                                if (first) {
+                                    ctx.moveTo(p.x, p.y);
+                                    first = false;
+                                } else ctx.lineTo(p.x, p.y);
+                            }
+                        });
+                        ctx.strokeStyle = "rgba(61,220,132,0.6)";
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+                    }
+                }
+
+                function animate() {
+                    rot += 0.1;
+                    drawGlobe(rot);
+                    requestAnimationFrame(animate);
+                }
+                animate();
+
+                // Expose spoofActive setter
+                window.setGlobeSpoofed = function (v) {
+                    spoofActive = v;
+                };
+            })();
+
+            // ── Geolocation ───────────────────────────────────────────────────────────────
+            const COVER_CITIES = [
+                { name: "Lincoln Park, Chicago", lat: 41.9214, lon: -87.6494 },
+                { name: "Prospect Park, Brooklyn", lat: 40.6602, lon: -73.969 },
+                {
+                    name: "Silver Lake, Los Angeles",
+                    lat: 34.0875,
+                    lon: -118.2706,
+                },
+                { name: "Victoria Park, London", lat: 51.5361, lon: -0.0419 },
+                { name: "High Park, Toronto", lat: 43.6465, lon: -79.4637 },
+            ];
+
+            let realLat = null,
+                realLon = null;
+            let spoofed = false;
+            let coverCity =
+                COVER_CITIES[Math.floor(Math.random() * COVER_CITIES.length)];
+
+            function setCoords(lat, lon, city, isSpoofed) {
+                const latEl = document.getElementById("live-lat");
+                const lonEl = document.getElementById("live-lon");
+                const cityEl = document.getElementById("loc-city");
+                const coordEl = document.getElementById("loc-coords");
+                const capEl = document.getElementById("loc-caption");
+
+                latEl.textContent = lat.toFixed(4) + "°N";
+                lonEl.textContent =
+                    Math.abs(lon).toFixed(4) + (lon < 0 ? "°W" : "°E");
+                cityEl.textContent = city;
+                capEl.classList.add("visible");
+
+                if (isSpoofed) {
+                    coordEl.classList.add("spoofed");
+                    cityEl.classList.add("spoofed");
+                } else {
+                    coordEl.classList.remove("spoofed");
+                    cityEl.classList.remove("spoofed");
+                }
+            }
+
+            function detectLocation() {
+                // Try geolocation
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            realLat = pos.coords.latitude;
+                            realLon = pos.coords.longitude;
+                            // Reverse geocode city name (best-effort, fallback to coords)
+                            fetch(
+                                `https://nominatim.openstreetmap.org/reverse?lat=${realLat}&lon=${realLon}&format=json`,
+                            )
+                                .then((r) => r.json())
+                                .then((d) => {
+                                    const city =
+                                        d.address?.city ||
+                                        d.address?.town ||
+                                        d.address?.county ||
+                                        "Your location";
+                                    document.getElementById(
+                                        "hero-lat",
+                                    ).textContent = realLat.toFixed(4);
+                                    document.getElementById(
+                                        "hero-lon",
+                                    ).textContent = realLon.toFixed(4);
+                                    setCoords(realLat, realLon, city, false);
+                                })
+                                .catch(() => {
+                                    document.getElementById(
+                                        "hero-lat",
+                                    ).textContent = realLat.toFixed(4);
+                                    document.getElementById(
+                                        "hero-lon",
+                                    ).textContent = realLon.toFixed(4);
+                                    setCoords(
+                                        realLat,
+                                        realLon,
+                                        "Your location",
+                                        false,
+                                    );
+                                });
+                        },
+                        () => {
+                            // Denied — use approximate
+                            setCoords(
+                                37.7749,
+                                -122.4194,
+                                "San Francisco, CA",
+                                false,
+                            );
+                            realLat = 37.7749;
+                            realLon = -122.4194;
+                        },
+                    );
+                }
+            }
+
+            function toggleSpoof() {
+                const btn = document.getElementById("spoof-btn");
+                spoofed = !spoofed;
+
+                if (spoofed) {
+                    coverCity =
+                        COVER_CITIES[
+                            Math.floor(Math.random() * COVER_CITIES.length)
+                        ];
+                    setCoords(
+                        coverCity.lat,
+                        coverCity.lon,
+                        coverCity.name,
+                        true,
+                    );
+                    btn.textContent = "← Restore real location";
+                    btn.classList.add("active");
+                    window.setGlobeSpoofed && window.setGlobeSpoofed(true);
+                } else {
+                    if (realLat)
+                        setCoords(realLat, realLon, "Your location", false);
+                    btn.textContent = "Override with cover route →";
+                    btn.classList.remove("active");
+                    window.setGlobeSpoofed && window.setGlobeSpoofed(false);
+                }
+            }
+
+            // ── Waitlist ──────────────────────────────────────────────────────────────────
+            let count = 247 + Math.floor(Math.random() * 80);
+            document.getElementById("count-num").textContent = count;
+
+            async function handleSubmit() {
+                const input = document.getElementById("email-input");
+                const email = input.value.trim();
+                if (!email || !email.includes("@")) {
+                    input.style.borderBottom = "1px solid #ff4444";
+                    return;
+                }
+                input.style.borderBottom = "";
+                try {
+                    const res = await fetch("/api/waitlist", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email }),
+                    });
+                    if (!res.ok) throw new Error("request failed");
+                    const data = await res.json();
+                    document.querySelector(".form-row").style.opacity = "0.4";
+                    document.querySelector(".form-row").style.pointerEvents =
+                        "none";
+                    document.getElementById("success-msg").style.display =
+                        "block";
+                    if (typeof data.count === "number") {
+                        document.getElementById("count-num").textContent =
+                            data.count;
+                    }
+                } catch (e) {
+                    input.style.borderBottom = "1px solid #ff4444";
+                }
+            }
+
+            document
+                .getElementById("email-input")
+                .addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") handleSubmit();
+                });
+
+            // ── Fade-in observer ──────────────────────────────────────────────────────────
+            const obs = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((e) => {
+                        if (e.isIntersecting) {
+                            e.target.classList.add("visible");
+                            obs.unobserve(e.target);
+                        }
+                    });
+                },
+                { threshold: 0.08, rootMargin: "0px 0px -40px 0px" },
+            );
+            document
+                .querySelectorAll(".fade-in")
+                .forEach((el) => obs.observe(el));
+
+            // ── Route progress animation ──────────────────────────────────────────────────
+            (function () {
+                let pct = 58;
+                setInterval(() => {
+                    pct = Math.min(100, pct + Math.random() * 0.05);
+                    const el = document.getElementById("route-progress");
+                    if (el) el.style.width = pct.toFixed(1) + "%";
+                }, 2000);
+            })();
+
+            // ── Init ──────────────────────────────────────────────────────────────────────
+            document.addEventListener("DOMContentLoaded", () => {
+                detectLocation();
+                // Hero coord placeholder
+                document.getElementById("hero-lat").textContent = "——.——";
+                document.getElementById("hero-lon").textContent = "——.——";
+            });
+        </script>
+    </body>
+</html>

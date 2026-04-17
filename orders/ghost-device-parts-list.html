@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ghost Device — Dev Parts List</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f0e;
+    --surface: #141714;
+    --surface2: #1c1f1c;
+    --border: #2a2e2a;
+    --accent: #4ade80;
+    --accent-dim: #1a3324;
+    --text-primary: #e8ede8;
+    --text-secondary: #7a8a7a;
+    --text-dim: #4a564a;
+    --amber: #f59e0b;
+    --amber-dim: #2d2008;
+    --blue: #60a5fa;
+    --blue-dim: #0d1f3c;
+    --coral: #fb7185;
+    --coral-dim: #2d0d14;
+    --total-green: #4ade80;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 0;
+  }
+
+  /* Header */
+  .header {
+    padding: 48px 40px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .header-left {}
+  .tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid #2a5a3a;
+    padding: 3px 10px;
+    border-radius: 2px;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    font-weight: 300;
+  }
+
+  /* Totals bar */
+  .totals-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .total-cell {
+    background: var(--surface);
+    padding: 12px 20px;
+    text-align: center;
+  }
+  .total-cell .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .total-cell .value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .total-cell .value.amber { color: var(--amber); }
+  .total-cell .value.blue { color: var(--blue); }
+
+  /* Filters */
+  .filters {
+    padding: 16px 40px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .filter-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-right: 4px;
+  }
+  .filter-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+  /* Main table */
+  .table-wrap { padding: 0 40px 40px; }
+  .section-header {
+    padding: 20px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-header h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+  }
+  .section-header .line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .section-header .section-total {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 4px;
+  }
+  thead tr {
+    border-bottom: 1px solid var(--border);
+  }
+  thead th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  thead th:last-child { text-align: right; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+    cursor: default;
+  }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr.hidden { display: none; }
+
+  td {
+    padding: 14px 12px;
+    vertical-align: top;
+  }
+  td.part-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    min-width: 200px;
+  }
+  td.part-name a {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  td.part-name a:hover .name-text { color: var(--accent); }
+  .name-text { flex: 1; }
+  .link-icon {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  tr:hover .link-icon { opacity: 1; }
+
+  .part-id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .part-purpose {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 300;
+    line-height: 1.4;
+    max-width: 280px;
+  }
+  .part-note {
+    font-size: 11px;
+    color: var(--amber);
+    background: var(--amber-dim);
+    border: 1px solid #3d2a06;
+    border-radius: 2px;
+    padding: 2px 6px;
+    display: inline-block;
+    margin-top: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .part-note.blue {
+    color: var(--blue);
+    background: var(--blue-dim);
+    border-color: #1a3a60;
+  }
+  .part-note.green {
+    color: var(--accent);
+    background: var(--accent-dim);
+    border-color: #2a5a3a;
+  }
+  .part-note.red {
+    color: var(--coral);
+    background: var(--coral-dim);
+    border-color: #5a1a28;
+  }
+
+  td.qty {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-align: center;
+    width: 50px;
+  }
+  td.source {
+    width: 100px;
+  }
+  .source-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 7px;
+    border-radius: 2px;
+    display: inline-block;
+    letter-spacing: 0.05em;
+  }
+  .src-digikey { background: #0a1f0a; color: #4ade80; border: 1px solid #2a5a2a; }
+  .src-adafruit { background: #1a0a1f; color: #c084fc; border: 1px solid #4a2a5a; }
+  .src-sparkfun { background: #1f0a0a; color: #fb7185; border: 1px solid #5a2a2a; }
+  .src-mouser { background: #0a1520; color: #60a5fa; border: 1px solid #1a3050; }
+  .src-amazon { background: #1f1600; color: #f59e0b; border: 1px solid #4a3800; }
+
+  td.price {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: right;
+    color: var(--text-primary);
+    width: 80px;
+    white-space: nowrap;
+  }
+  td.price .per-unit {
+    display: block;
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+
+  /* Section subtotal row */
+  .subtotal-row td {
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    padding: 8px 12px;
+  }
+  .subtotal-row .subtotal-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    text-align: right;
+    padding-right: 8px;
+  }
+  .subtotal-row .subtotal-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: right;
+  }
+
+  /* Grand total */
+  .grand-total {
+    margin: 24px 0 0;
+    padding: 20px 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 20px;
+  }
+  .grand-total .gt-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+  }
+  .grand-total .gt-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .grand-total .gt-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  /* Footer notes */
+  .footer-notes {
+    border-top: 1px solid var(--border);
+    padding: 24px 40px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .note-block h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .note-block p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+  .note-block p strong { color: var(--accent); font-weight: 500; }
+
+  @media print {
+    body { background: white; color: black; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="tag">Ghost Device · Dev Build · Rev 0.1</div>
+    <h1>Breadboard <span>Parts List</span></h1>
+    <div class="subtitle">Development kit + breakout build — all parts breadboard-compatible</div>
+  </div>
+  <div class="totals-bar">
+    <div class="total-cell">
+      <span class="label">Parts</span>
+      <span class="value" id="total-parts">18</span>
+    </div>
+    <div class="total-cell">
+      <span class="label">Est. Total</span>
+      <span class="value" id="total-cost">$357</span>
+    </div>
+    <div class="total-cell">
+      <span class="label">Vendors</span>
+      <span class="value blue">4</span>
+    </div>
+  </div>
+</div>
+
+<div class="filters">
+  <span class="filter-label">Filter:</span>
+  <button class="filter-btn active" onclick="filterCat('all')">All</button>
+  <button class="filter-btn" onclick="filterCat('core')">Core MCU</button>
+  <button class="filter-btn" onclick="filterCat('storage')">Storage</button>
+  <button class="filter-btn" onclick="filterCat('gnss')">GNSS</button>
+  <button class="filter-btn" onclick="filterCat('power')">Power</button>
+  <button class="filter-btn" onclick="filterCat('proto')">Prototyping</button>
+  <button class="filter-btn" onclick="filterCat('tools')">Tools</button>
+</div>
+
+<div class="table-wrap">
+
+  <!-- SECTION: Core MCU -->
+  <div class="section-header">
+    <h2>Core MCU</h2>
+    <div class="line"></div>
+    <span class="section-total">$49 – $89</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Part</th>
+        <th>Purpose</th>
+        <th style="text-align:center">Qty</th>
+        <th>Source</th>
+        <th>Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr data-cat="core">
+        <td class="part-name">
+          <a href="https://www.digikey.com/en/products/detail/nordic-semiconductor-asa/NRF52840-DK/7175634" target="_blank">
+            <div>
+              <div class="name-text">Nordic nRF52840-DK</div>
+              <div class="part-id">NRF52840-DK · PCA10056</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+          <div><span class="part-note green">Primary MCU dev kit</span></div>
+        </td>
+        <td class="part-purpose">BT 5.3 SoC, all GPIOs on 0.1" headers, on-board SEGGER J-Link OB debugger, LiPo connector, Arduino Uno R3 compatible. Runs FreeRTOS + SoftDevice S140. The entire firmware lives here for the breadboard phase.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-digikey">DigiKey</span><br><span class="source-badge src-mouser" style="margin-top:4px;display:inline-block">Mouser</span></td>
+        <td class="price">$49.00<span class="per-unit">per unit</span></td>
+      </tr>
+      <tr data-cat="tools" class="optional-row">
+        <td class="part-name">
+          <a href="https://www.digikey.com/en/products/detail/nordic-semiconductor-asa/NRF-PPK2/13557476" target="_blank">
+            <div>
+              <div class="name-text">Nordic Power Profiler Kit II</div>
+              <div class="part-id">NRF-PPK2</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+          <div><span class="part-note amber">Strongly recommended</span></div>
+        </td>
+        <td class="part-purpose">Measures current from 200nA–1A. Source mode replaces your bench supply and plots current live. Validates the &lt;20mA active / &lt;50µA deep-sleep targets directly. Connects to the nRF52840-DK via jumper cables.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-digikey">DigiKey</span></td>
+        <td class="price">$89.00<span class="per-unit">per unit</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION: Storage -->
+  <div class="section-header">
+    <h2>Non-volatile Storage</h2>
+    <div class="line"></div>
+    <span class="section-total">~$5</span>
+  </div>
+  <table>
+    <thead><tr><th>Part</th><th>Purpose</th><th style="text-align:center">Qty</th><th>Source</th><th>Price</th></tr></thead>
+    <tbody>
+      <tr data-cat="storage">
+        <td class="part-name">
+          <a href="https://www.adafruit.com/product/5643" target="_blank">
+            <div>
+              <div class="name-text">Adafruit SPI Flash Breakout — W25Q128</div>
+              <div class="part-id">ADA5643 · W25Q128JVSIQ · 16 MB</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+          <div><span class="part-note green">Exact production IC</span></div>
+        </td>
+        <td class="part-purpose">Exact flash chip from the PRD broken out to breadboard-friendly 0.1" headers. Level shifting included (works at 3.3V or 5V). SPI: SCK/MOSI/MISO/CS. Stores ~370 hours of 1Hz GRF routes. Uses Adafruit_SPIFlash library.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-adafruit">Adafruit</span></td>
+        <td class="price">~$4.95<span class="per-unit">per unit</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION: GNSS -->
+  <div class="section-header">
+    <h2>GNSS Module (optional SKU)</h2>
+    <div class="line"></div>
+    <span class="section-total">~$55–60</span>
+  </div>
+  <table>
+    <thead><tr><th>Part</th><th>Purpose</th><th style="text-align:center">Qty</th><th>Source</th><th>Price</th></tr></thead>
+    <tbody>
+      <tr data-cat="gnss">
+        <td class="part-name">
+          <a href="https://www.sparkfun.com/sparkfun-gnss-receiver-breakout-max-m10s-qwiic.html" target="_blank">
+            <div>
+              <div class="name-text">SparkFun MAX-M10S Breakout (Qwiic)</div>
+              <div class="part-id">SFE-GPS-18037 · u-blox MAX-M10S</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+          <div><span class="part-note amber">Optional — route-recording SKU only</span></div>
+        </td>
+        <td class="part-purpose">Exact PRD GNSS module on a breadboard-friendly carrier. &lt;25mW continuous, GPS/GLONASS/Galileo/BeiDou. UART (default 38400 baud, configurable to 115200) and I²C (0x42) on 0.1" header. On-board RTC backup battery for hot-start (~1s fix). SMA antenna connector — needs a patch antenna.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-sparkfun">SparkFun</span></td>
+        <td class="price">~$49.95<span class="per-unit">per unit</span></td>
+      </tr>
+      <tr data-cat="gnss">
+        <td class="part-name">
+          <a href="https://www.sparkfun.com/gps-gnss-antenna-sma-connector.html" target="_blank">
+            <div>
+              <div class="name-text">GNSS Patch Antenna (SMA)</div>
+              <div class="part-id">SFE-GPS-14986 or equiv.</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+        </td>
+        <td class="part-purpose">Required for the MAX-M10S breakout. Passive L1 patch antenna with SMA male connector. Tape to a window or lay flat on the bench when testing indoors.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-sparkfun">SparkFun</span></td>
+        <td class="price">~$9.95<span class="per-unit">per unit</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION: Power -->
+  <div class="section-header">
+    <h2>Power Subsystem</h2>
+    <div class="line"></div>
+    <span class="section-total">~$20–25</span>
+  </div>
+  <table>
+    <thead><tr><th>Part</th><th>Purpose</th><th style="text-align:center">Qty</th><th>Source</th><th>Price</th></tr></thead>
+    <tbody>
+      <tr data-cat="power">
+        <td class="part-name">
+          <a href="https://www.adafruit.com/product/4410" target="_blank">
+            <div>
+              <div class="name-text">Adafruit Micro-Lipo Charger (USB-C)</div>
+              <div class="part-id">ADA4410 · MCP73831 · 100mA / 500mA</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+          <div><span class="part-note green">Exact production IC</span></div>
+        </td>
+        <td class="part-purpose">MCP73831-based LiPo charger — the exact IC from the PRD — on a tiny USB-C breakout with red/green status LEDs. JST-PH 2mm battery connector. Close the solder jumper for 500mA charge rate. Separate JST for load output.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-adafruit">Adafruit</span></td>
+        <td class="price">$5.95<span class="per-unit">per unit</span></td>
+      </tr>
+      <tr data-cat="power">
+        <td class="part-name">
+          <a href="https://www.adafruit.com/product/5580" target="_blank">
+            <div>
+              <div class="name-text">Adafruit MAX17048 Fuel Gauge (STEMMA QT)</div>
+              <div class="part-id">ADA5580 · I²C 0x36</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+          <div><span class="part-note green">Exact production IC</span></div>
+        </td>
+        <td class="part-purpose">MAX17048 on a STEMMA QT breakout. Reports battery voltage and state-of-charge % over I²C. Dual JST-PH ports: battery in on one, load out to the rest of the circuit on the other. Breadboard pins or plug-and-play Qwiic/STEMMA cable to the DK.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-adafruit">Adafruit</span></td>
+        <td class="price">$6.95<span class="per-unit">per unit</span></td>
+      </tr>
+      <tr data-cat="power">
+        <td class="part-name">
+          <a href="https://www.adafruit.com/product/1578" target="_blank">
+            <div>
+              <div class="name-text">LiPo Battery 3.7V 400mAh</div>
+              <div class="part-id">ADA1578 · JST-PH 2mm</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+          <div><span class="part-note blue">Good for bench testing</span></div>
+        </td>
+        <td class="part-purpose">Close enough to the 300–600mAh production spec to validate power states and battery life estimates on the bench. JST-PH connector matches all Adafruit charger/fuel gauge boards above. Don't over-discharge below 3.2V.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-adafruit">Adafruit</span></td>
+        <td class="price">$6.95<span class="per-unit">per unit</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION: Proto -->
+  <div class="section-header">
+    <h2>Prototyping Hardware</h2>
+    <div class="line"></div>
+    <span class="section-total">~$25–30</span>
+  </div>
+  <table>
+    <thead><tr><th>Part</th><th>Purpose</th><th style="text-align:center">Qty</th><th>Source</th><th>Price</th></tr></thead>
+    <tbody>
+      <tr data-cat="proto">
+        <td class="part-name">
+          <a href="https://www.adafruit.com/product/239" target="_blank">
+            <div>
+              <div class="name-text">Full-size Breadboard (830 tie-points)</div>
+              <div class="part-id">ADA239 or equivalent</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+        </td>
+        <td class="part-purpose">Standard 830-point solderless breadboard. One board is tight — buy two so the nRF52840-DK can sit beside the peripheral breakouts with room to run jumpers. The DK is Arduino Uno R3 sized but has 0.1" headers on both sides.</td>
+        <td class="qty">×2</td>
+        <td class="source"><span class="source-badge src-adafruit">Adafruit</span></td>
+        <td class="price">$5.95 ea<span class="per-unit">×2 = $11.90</span></td>
+      </tr>
+      <tr data-cat="proto">
+        <td class="part-name">
+          <a href="https://www.adafruit.com/product/758" target="_blank">
+            <div>
+              <div class="name-text">Premium Jumper Wires M/M (75-pack)</div>
+              <div class="part-id">ADA758 · 15cm lengths</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+        </td>
+        <td class="part-purpose">You'll use a lot. SPI alone is 4 wires (SCK, MOSI, MISO, CS), UART is 2, I²C is 2 (×2 devices). Color-code by bus: use red/black for power, yellow for SPI, blue for I²C, green for UART. Buy M/F as well to reach DK header pins.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-adafruit">Adafruit</span></td>
+        <td class="price">$3.95<span class="per-unit">per pack</span></td>
+      </tr>
+      <tr data-cat="proto">
+        <td class="part-name">
+          <a href="https://www.adafruit.com/product/826" target="_blank">
+            <div>
+              <div class="name-text">Premium Jumper Wires M/F (40-pack)</div>
+              <div class="part-id">ADA826 · 15cm lengths</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+        </td>
+        <td class="part-purpose">For connecting from the nRF52840-DK's female headers to the breadboard rows. The DK uses female socket headers; these M/F wires bridge those to breadboard rows cleanly without stress on the headers.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-adafruit">Adafruit</span></td>
+        <td class="price">$3.95<span class="per-unit">per pack</span></td>
+      </tr>
+      <tr data-cat="proto">
+        <td class="part-name">
+          <a href="https://www.sparkfun.com/products/10215" target="_blank">
+            <div>
+              <div class="name-text">Qwiic / STEMMA QT Cable (100mm)</div>
+              <div class="part-id">SFE-PRT-10215 · JST SH 4-pin</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+          <div><span class="part-note blue">Optional — saves 4 jumpers per I²C board</span></div>
+        </td>
+        <td class="part-purpose">If you wire I²C breakouts (MAX17048 STEMMA QT, optional GNSS I²C) back to the nRF DK's I²C header pins via Qwiic cables it's faster and less error-prone than 4 individual jumpers. Buy a couple different lengths.</td>
+        <td class="qty">×2</td>
+        <td class="source"><span class="source-badge src-sparkfun">SparkFun</span></td>
+        <td class="price">$1.60 ea<span class="per-unit">×2 = $3.20</span></td>
+      </tr>
+      <tr data-cat="proto">
+        <td class="part-name">
+          <a href="https://www.adafruit.com/product/4210" target="_blank">
+            <div>
+              <div class="name-text">RGB NeoPixel LED (breadboard)</div>
+              <div class="part-id">ADA4210 · WS2812B on 5mm PTH</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+          <div><span class="part-note amber">Substitute for production RGB LED</span></div>
+        </td>
+        <td class="part-purpose">For breadboard prototyping, a single NeoPixel is easier than wiring 3× PWM channels to a discrete RGB LED. You can switch to a proper 4-pin RGB LED (common cathode, ~$0.50) before PCB. One GPIO pin, full RGB from firmware.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-adafruit">Adafruit</span></td>
+        <td class="price">$1.95<span class="per-unit">per unit</span></td>
+      </tr>
+      <tr data-cat="proto">
+        <td class="part-name">
+          <a href="https://www.adafruit.com/product/367" target="_blank">
+            <div>
+              <div class="name-text">Tactile Switch Buttons (20-pack)</div>
+              <div class="part-id">ADA367 · 6mm × 6mm PTH</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+          <div><span class="part-note amber">Substitute for cap-touch button</span></div>
+        </td>
+        <td class="part-purpose">The production device uses a capacitive touch button but for breadboard firmware dev a regular tact switch is perfectly fine. Wire to any GPIO with internal pull-up. Wire one for single-tap and one for hold detection testing.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-adafruit">Adafruit</span></td>
+        <td class="price">$2.50<span class="per-unit">per pack</span></td>
+      </tr>
+      <tr data-cat="proto">
+        <td class="part-name">
+          <a href="https://www.adafruit.com/product/2830" target="_blank">
+            <div>
+              <div class="name-text">Resistor Kit (500-piece, E12 series)</div>
+              <div class="part-id">ADA2830 or equivalent</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+        </td>
+        <td class="part-purpose">You'll need pull-ups on SPI CS lines (~10kΩ), current-limiting resistors for status LEDs, and maybe a programming resistor for the MCP73831 charge current. E12 series covers all typical values. One kit lasts the whole project.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-adafruit">Adafruit</span></td>
+        <td class="price">$7.95<span class="per-unit">per kit</span></td>
+      </tr>
+      <tr data-cat="proto">
+        <td class="part-name">
+          <a href="https://www.adafruit.com/product/64" target="_blank">
+            <div>
+              <div class="name-text">0.1µF Ceramic Capacitors (25-pack)</div>
+              <div class="part-id">ADA64 · 50V 0.1µF PTH</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+        </td>
+        <td class="part-purpose">Decoupling caps for the flash chip VCC, GNSS module VCC, and power rails. Ideally one cap close to each IC's power pin. On a breadboard this matters more than you'd expect — flash read errors and BLE instability often trace back to noisy rails.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-adafruit">Adafruit</span></td>
+        <td class="price">$1.95<span class="per-unit">per pack</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION: Cabling -->
+  <div class="section-header">
+    <h2>Cabling &amp; Consumables</h2>
+    <div class="line"></div>
+    <span class="section-total">~$10</span>
+  </div>
+  <table>
+    <thead><tr><th>Part</th><th>Purpose</th><th style="text-align:center">Qty</th><th>Source</th><th>Price</th></tr></thead>
+    <tbody>
+      <tr data-cat="proto">
+        <td class="part-name">
+          <a href="https://www.adafruit.com/product/592" target="_blank">
+            <div>
+              <div class="name-text">USB-C Cable (1m)</div>
+              <div class="part-id">ADA592 or any USB-A to USB-C</div>
+            </div>
+            <span class="link-icon">↗</span>
+          </a>
+        </td>
+        <td class="part-purpose">For programming the nRF52840-DK via the on-board J-Link (the DK uses a Micro-USB port — check your DK revision) and for powering the Adafruit LiPo charger (USB-C input).</td>
+        <td class="qty">×2</td>
+        <td class="source"><span class="source-badge src-adafruit">Adafruit</span></td>
+        <td class="price">~$3–5 ea<span class="per-unit">×2</span></td>
+      </tr>
+      <tr data-cat="proto">
+        <td class="part-name">
+          <div>
+            <div class="name-text">Micro-USB Cable (1m)</div>
+            <div class="part-id">Any quality USB-A to Micro-B</div>
+          </div>
+          <div><span class="part-note amber">nRF52840-DK uses Micro-USB</span></div>
+        </td>
+        <td class="part-purpose">The nRF52840-DK uses a Micro-USB connector for J-Link programming and power — not USB-C. You likely already have one, but confirm before ordering.</td>
+        <td class="qty">×1</td>
+        <td class="source"><span class="source-badge src-amazon">Amazon</span></td>
+        <td class="price">~$5.00<span class="per-unit">per unit</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Grand Total -->
+  <div class="grand-total">
+    <div>
+      <div class="gt-label">Estimated Total</div>
+      <div class="gt-sub">excl. GNSS optional parts</div>
+    </div>
+    <div style="text-align:right">
+      <div class="gt-value">~$202</div>
+    </div>
+    <div style="width:1px;height:40px;background:var(--border)"></div>
+    <div>
+      <div class="gt-label">With GNSS module</div>
+      <div class="gt-sub">incl. MAX-M10S + antenna</div>
+    </div>
+    <div style="text-align:right">
+      <div class="gt-value" style="color:var(--amber)">~$262</div>
+    </div>
+    <div style="width:1px;height:40px;background:var(--border)"></div>
+    <div>
+      <div class="gt-label">With PPK2 tool</div>
+      <div class="gt-sub">full recommended kit</div>
+    </div>
+    <div style="text-align:right">
+      <div class="gt-value" style="color:var(--blue)">~$351</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer-notes">
+  <div class="note-block">
+    <h3>What you skip on the breadboard</h3>
+    <p>The nRF52840-DK already includes a 3.3V regulator, so you <strong>don't need a standalone LDO</strong> for the breadboard phase. The on-board J-Link means <strong>no external programmer</strong> is needed. The production MCP73831 charger is replaced by the standalone Adafruit module — same IC, easier wiring.</p>
+  </div>
+  <div class="note-block">
+    <h3>What changes for PCB</h3>
+    <p>The DK will be replaced by a bare <strong>u-blox ANNA-B112</strong> or <strong>Nordic nRF52840 module</strong>. The Adafruit breakouts get replaced by the discrete ICs (MCP73831, MAX17048, W25Q128JVSIQ) in their production packages. The NeoPixel swaps for a 4-pin RGB LED.</p>
+  </div>
+  <div class="note-block">
+    <h3>Buy from Mouser or DigiKey</h3>
+    <p>For the nRF52840-DK specifically, <strong>avoid Amazon</strong> — clones exist and the on-board J-Link is a key differentiator. Mouser and DigiKey are interchangeable; check live stock and shipping time. Adafruit and SparkFun ship direct and are the right source for breakouts.</p>
+  </div>
+</div>
+
+<script>
+function filterCat(cat) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const rows = document.querySelectorAll('tbody tr[data-cat]');
+  rows.forEach(row => {
+    if (cat === 'all' || row.dataset.cat === cat) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+</script>
+</body>
+</html>
