@@ -265,6 +265,45 @@
                 letter-spacing: 0.12em;
                 text-transform: uppercase;
             }
+            .hero-cta {
+                font-family: var(--mono);
+                font-size: 12px;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: var(--bg);
+                background: var(--green);
+                border: none;
+                padding: 16px 28px;
+                cursor: crosshair;
+                font-weight: 600;
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                transition: transform 0.15s ease, box-shadow 0.2s ease;
+                box-shadow: 0 0 0 1px rgba(61, 220, 132, 0.4),
+                    0 0 32px rgba(61, 220, 132, 0.25);
+            }
+            .hero-cta:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 0 0 1px rgba(61, 220, 132, 0.6),
+                    0 0 48px rgba(61, 220, 132, 0.4);
+            }
+            .hero-cta-meta {
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--muted);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .hero-cta-meta .dot {
+                width: 4px;
+                height: 4px;
+                border-radius: 50%;
+                background: var(--green);
+            }
 
             /* LOCATION SECTION */
             #location {
@@ -1046,7 +1085,16 @@
                         jailbreak. No Complexity. No trace.
                     </p>
                     <div class="hero-action">
-                        <span class="scroll-hint">↓ scroll</span>
+                        <button
+                            class="hero-cta"
+                            onclick="document.getElementById('waitlist').scrollIntoView({ behavior: 'smooth' })"
+                        >
+                            Reserve your place →
+                        </button>
+                        <span class="hero-cta-meta">
+                            <span class="dot"></span>
+                            First 500 · 20% off · No card required
+                        </span>
                     </div>
                 </div>
             </div>
