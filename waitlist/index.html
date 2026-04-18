@@ -1159,10 +1159,9 @@
                             <div class="step-body">
                                 <div class="step-title">Location injection</div>
                                 <div class="step-desc">
-                                    The <code>Ghost</code> device
-                                    feeds coordinates into
-                                    <code>locationd</code> at 1Hz. Every app
-                                    reading location sees the
+                                    The <code>Ghost</code> device feeds
+                                    coordinates into <code>locationd</code> at
+                                    1Hz. Every app reading location sees the
                                     cover route.
                                 </div>
                             </div>
@@ -1458,8 +1457,8 @@
                 <div class="waitlist-tag">Early access</div>
                 <h2 class="waitlist-h2">Stay<br />invisible</h2>
                 <p class="waitlist-sub">
-                    Ghost ships to the first 500 people on the waitlist. No
-                    spam; one email when we're ready.
+                    Ghost ships to the first 1000 people on the waitlist with a
+                    20% discount. No spam; one email when we're ready.
                 </p>
                 <div class="form-row">
                     <input
@@ -1475,10 +1474,10 @@
                     <span>Shipping Dec 2026</span>
                 </div>
                 <div class="success-msg" id="success-msg">
-                    You're on the list. We'll be in touch.
+                    <span id="success-text">You're on the list. We'll be in touch.</span>
                 </div>
                 <div class="waitlist-count">
-                    <strong id="count-num">247</strong> people ahead of you
+                    <strong id="count-num">—</strong> people on the list
                 </div>
             </div>
         </section>
@@ -1769,8 +1768,16 @@
             }
 
             // ── Waitlist ──────────────────────────────────────────────────────────────────
-            let count = 247 + Math.floor(Math.random() * 80);
-            document.getElementById("count-num").textContent = count;
+            const countEl = document.getElementById("count-num");
+            countEl.textContent = "—";
+            fetch("/api/waitlist/count")
+                .then((r) => r.json())
+                .then((d) => {
+                    if (typeof d.count === "number") countEl.textContent = d.count;
+                })
+                .catch(() => {
+                    countEl.textContent = "—";
+                });
 
             async function handleSubmit() {
                 const input = document.getElementById("email-input");
@@ -1791,6 +1798,10 @@
                     document.querySelector(".form-row").style.opacity = "0.4";
                     document.querySelector(".form-row").style.pointerEvents =
                         "none";
+                    document.getElementById("success-text").textContent =
+                        data.alreadyJoined
+                            ? "You're already on the list."
+                            : "You're on the list. We'll be in touch.";
                     document.getElementById("success-msg").style.display =
                         "block";
                     if (typeof data.count === "number") {
