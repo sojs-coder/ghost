@@ -1457,7 +1457,7 @@
                 <div class="waitlist-tag">Early access</div>
                 <h2 class="waitlist-h2">Stay<br />invisible</h2>
                 <p class="waitlist-sub">
-                    Ghost ships to the first 1000 people on the waitlist with a
+                    Ghost ships to the first 500 people on the waitlist with a
                     20% discount. No spam; one email when we're ready.
                 </p>
                 <div class="form-row">
@@ -1466,9 +1466,25 @@
                         id="email-input"
                         placeholder="your@email.com"
                         autocomplete="email"
+                        maxlength="254"
                     />
                     <button onclick="handleSubmit()">Join →</button>
                 </div>
+                <input
+                    type="text"
+                    id="hp-website"
+                    name="website"
+                    tabindex="-1"
+                    autocomplete="off"
+                    aria-hidden="true"
+                    style="
+                        position: absolute;
+                        left: -10000px;
+                        width: 1px;
+                        height: 1px;
+                        opacity: 0;
+                    "
+                />
                 <div class="form-extras">
                     <span>No card required</span>
                     <span>Shipping Dec 2026</span>
@@ -1788,11 +1804,20 @@
                 }
                 input.style.borderBottom = "";
                 try {
+                    const hp =
+                        document.getElementById("hp-website")?.value || "";
                     const res = await fetch("/api/waitlist", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ email }),
+                        body: JSON.stringify({ email, website: hp }),
                     });
+                    if (res.status === 429) {
+                        document.getElementById("success-text").textContent =
+                            "Too many attempts. Try again in a few minutes.";
+                        document.getElementById("success-msg").style.display =
+                            "block";
+                        return;
+                    }
                     if (!res.ok) throw new Error("request failed");
                     const data = await res.json();
                     document.querySelector(".form-row").style.opacity = "0.4";
