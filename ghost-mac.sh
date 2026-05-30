@@ -11,6 +11,12 @@
 
 set -uo pipefail
 
+# Guard: must run under bash, not sh
+if [ -z "${BASH_VERSION:-}" ]; then
+  echo "ERROR: run with bash, not sh:  sudo bash ghost-mac.sh <route.gpx>" >&2
+  exit 1
+fi
+
 # ── Config ────────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$SCRIPT_DIR/ghost-env"
@@ -174,10 +180,12 @@ install_deps() {
 
 # ── Step 4: iPhone on USB ─────────────────────────────────────────────────────
 info "Checking for connected iPhone..."
-# system_profiler replaces lsusb on macOS
-system_profiler SPUSBDataType 2>/dev/null | grep -q "Apple\|iPhone\|iPad" \
-  || die "No Apple device on USB. Connect your iPhone and re-run."
-ok "iPhone detected on USB."
+# system_profiler fails under sudo, so use pymobiledevice3 which is already installed
+DEVICE_CHECK=$($PMD3 usbmux list 2>/dev/null || echo "[]")
+if [[ "$DEVICE_CHECK" == "[]" ]] || [[ -z "$DEVICE_CHECK" ]]; then
+  die "No Apple device visible. Connect your iPhone, unlock it, and tap Trust — then re-run."
+fi
+ok "iPhone detected."
 
 # ── Step 5: usbmuxd socket ───────────────────────────────────────────────────
 info "Checking usbmuxd..."
@@ -201,16 +209,6 @@ fi
 ok "usbmuxd socket: $USBMUXD_SOCKET"
 export USBMUXD_SOCKET_ADDRESS="$USBMUXD_SOCKET"
 
-# Check pymobiledevice3 can see the phone
-DEVICE_LIST=$($PMD3 usbmux list 2>/dev/null || echo "[]")
-if [[ "$DEVICE_LIST" == "[]" ]] || [[ -z "$DEVICE_LIST" ]]; then
-  warn "No device visible yet. Make sure iPhone is:"
-  warn "  1. Unlocked"
-  warn "  2. Developer Mode on  (Settings → Privacy & Security → Developer Mode)"
-  warn "  3. Has tapped 'Trust' for this Mac"
-  echo ""
-  read -r -p "Press Enter when ready, or Ctrl+C to abort..."
-fi
 
 # ── Step 6: DVT tunnel ────────────────────────────────────────────────────────
 info "Establishing DVT tunnel..."
