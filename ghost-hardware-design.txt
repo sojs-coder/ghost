@@ -1,0 +1,105 @@
+Ghost
+Clip-on Hardware Design Document
+Prototype v1.0  ·  Target: iPhone SE 2nd Gen  ·  2026-04-17
+Design objective
+A clip-on device that attaches to the back of an iPhone SE (2nd gen) — the smallest supported phone — and injects a cover GPS route via DVT over USB. The device must not exceed the phone's footprint (67.3 × 138.4 mm), must self-power for ?6 hours, must expose heavy ventilation on the Pi-facing side, and must remain palm-holdable.
+
+1. Reference dimensions
+1.1 Constraint: iPhone SE 2nd generation
+The iPhone SE 2nd generation is the smallest iPhone that supports iOS 16 and DVT location injection, making it the binding constraint for the device footprint.
+
+Height138.4 mm  (5.45 in)Width67.3 mm  (2.65 in)Depth (phone)7.3 mm  (0.29 in)Weight148 gDisplay4.7-inch Retina HD, IPSConnectorLightning (bottom center)CameraRear center, top of back faceRear glassFull back surface — no raised features except camera module
+The device must not cover the camera module. Camera sits at top-center of rear face, approximately 10 mm from top edge, 10 mm × 10 mm module. Device must leave this area clear or cut out around it.
+
+1.2 Raspberry Pi Zero 2W
+All component dimensions are confirmed from the official Raspberry Pi mechanical drawing (datasheets.raspberrypi.com/rpizero2/raspberry-pi-zero-2-w-mechanical-drawing.pdf).
+
+PCB length65.0 mmPCB width30.0 mmPCB thickness1.4 mm (standard 2-layer FR4)Total height (tallest component)5.0 mm (SiP package + copper shield)With microSD extended~68 mm (card protrudes ~3 mm past edge)With USB connectors populated~32 mm wideMounting holes4× M2.5, at 3.5 mm inset from each cornerMounting hole pitch (L)58.0 mm center-to-centerMounting hole pitch (W)23.0 mm center-to-centerSoC / SiP locationCenter of board, RP3A0 SiP with copper heatsink layermicroSD slotRight edge (long side), flush-mountUSB OTG (data)Left edge, micro-USB, at ~41 mm from left short edge — THIS connects to iPhoneUSB powerLeft edge, micro-USB, at ~29 mm from left short edgeMini HDMILeft edge, at ~12 mm from left short edge (unused, masked in enclosure)40-pin GPIO headerRight edge (long side), unpopulated footprint. 51 mm from short edge.CSI camera connectorRight short edge, center (unused)Wi-Fi / BT antennaTop-right corner, shielded module (disable Wi-Fi in software)
+The Pi fits within the phone width (65 mm < 67.3 mm) with 1.15 mm clearance on each side — tight but viable. The Pi is oriented with its long axis running along the phone's long axis. The microSD card extends to 68 mm when inserted, requiring a slot or cutout in the enclosure's right edge wall.
+
+
+2. Battery
+2.1 Power budget
+The Pi Zero 2W running ghostd with active DVT injection draws approximately 180–220 mA at 5V. The PMIC (TP4056 + MT3608 boost) adds ~10% overhead. Target runtime is 6 hours.
+
+Pi Zero 2W avg draw (active DVT)200 mA @ 5V  =  1.0 WPMIC efficiency (boost)~88–90%Effective draw from LiPo~230 mA @ 3.7VRequired capacity for 6 hr230 mA × 6 hr = 1,380 mAh  ?  round up to 1,500 mAh minimumSafety derating (80% usable)1,500 / 0.80 = 1,875 mAh nominal cell requiredSelected cell capacity2,000 mAh  (provides ~7–8 hr derated headroom)
+2.2 Selected battery: LP654060
+The LP654060 is a standard off-the-shelf LiPo pouch cell available from multiple Chinese suppliers (Shenzhen Hondark, Grepow, lipolybatteries.com). It fits within the phone footprint with margin.
+
+Part numberLP654060  (thickness-width-length naming convention)Thickness6.5 mmWidth40 mmLength60 mmCapacity2,000 mAh (nominal)  /  2,010 mAh (typical)Voltage3.7V nominal  /  4.2V fully charged  /  3.0V cutoffEnergy7.4 WhWeight~38 gProtection circuitBuilt-in PCM (overcharge, overdischarge, short-circuit)Connector2-pin JST-PH (2.0 mm pitch)Cycle life~500 cycles to 80% capacitySourcinglipolybatteries.com · Grepow · Alibaba (MOQ 1 for samples)
+LP654060 fits with 7.3 mm to spare in the 67.3 mm phone width (40 mm cell + 14 mm Pi width zone + 13.3 mm margin). Length (60 mm) leaves 78.4 mm for the Pi zone and connectors within the 138.4 mm phone height.
+
+2.3 Battery placement
+The battery sits behind (phone-facing side of) the Pi, occupying the upper 60 mm of the device. The Pi sits on top of the battery in the enclosure stack, separated by a thin thermal pad (not for heat transfer — purely for mechanical stability). The battery's JST connector tails downward to the carrier PCB.
+
+Battery positionUpper zone, 0–60 mm from top of devicePi positionUpper zone, battery-facing side, secured by M2.5 standoffsPMIC board positionLower zone, 65–95 mm from top (below Pi, beside Lightning flex)Lightning flexBottom edge, center, 0–25 mm up from bottom
+
+3. Enclosure
+3.1 Overall dimensions
+The enclosure is sized to match the phone's back exactly. No overhang on width or height. Thickness is determined by the component stack.
+
+Outer width67.3 mm  (matches phone exactly — flush at sides)Outer height138.4 mm  (matches phone exactly — flush at top/bottom)Outer depth (total)~14.5 mmWall thickness1.0 mm (top, sides)  /  1.5 mm (rear exterior face)Inner depth available~12.0 mmCorner radius8 mm (matches iPhone SE 2nd gen corner radius)
+3.2 Layer stack (back to front, phone-facing = front)
+
+LayerComponentThicknessNotes1 (rear exterior)ABS rear wall1.5 mmPerforated grid over Pi zone — see §3.32Raspberry Pi Zero 2W PCB1.4 mmLong axis = phone long axis. Secured by M2.5 standoffs.3Pi component height (SiP + caps)3.6 mmSiP is tallest component at ~3.5 mm above PCB4Air gap + thermal clearance0.5 mmIntentional gap — perforation airflow path5LP654060 LiPo cell6.5 mmPouch cell, faces phone glass6 (front, phone)ABS front wall + adhesive layer1.0 mmSmooth — contacts phone back glass
+Total stack: 1.5 + 1.4 + 3.6 + 0.5 + 6.5 + 1.0 = 14.5 mm
+
+3.3 Ventilation perforations (rear face — CRITICAL)
+The Pi Zero 2W SiP runs warm under sustained load. The official Raspberry Pi datasheet recommends ventilated operation. The rear face of the enclosure (the face visible when the phone is face-down) must have a dense perforation pattern across the entire Pi zone to allow convective airflow. The Pi must never be enclosed in a sealed cavity.
+
+Perforation zoneEntire rear face area overlapping the Pi PCB: 65 × 30 mmHole diameter2.0 mm (circular)Hole pitch3.5 mm center-to-center (hexagonal close-pack pattern)Estimated hole count~130 holes across the Pi zoneOpen area ratio~26%  (well above minimum 15% for adequate convection)Wall thickness at holes1.5 mm — holes are straight cylindrical bores (no taper)AestheticHexagonal grid pattern — clean, industrial, functionalArea NOT perforatedBattery zone (lower 78 mm) — smooth ABS. Battery is sealed.
+The perforations run over the Pi side only — not over the battery. A perforated battery cover would weaken the enclosure and provides no thermal benefit since the LiPo does not require active ventilation. The visual contrast (perforated top half, smooth bottom half) is also a deliberate design identity element.
+
+
+4. Ports, connectors, and indicators
+4.1 iPhone Lightning connector (primary data port)
+This is the device's only data connection. It carries the DVT tunnel that makes Ghost work.
+
+Connector typeLightning male plug (8-pin)LocationBottom edge of device, center (matches iPhone SE port position exactly)Offset from bottom0 mm — flush with bottom edge, protrudes 5.5 mm to mate with phoneInterfaceUSB 2.0 OTG data — connects to Pi's USB OTG micro-USB via FPCFPC routingShort ~25 mm FPC from Lightning plug to micro-USB adapter board near Pi's OTG portLightning socket on phoneCenter of bottom edge of iPhone SE — aligns with device center at 33.65 mm from leftMating depthLightning mates at ~5.5 mm insertion depthSourcingLightning replacement plug assemblies: AliExpress, Shenzhen electronics markets. Note: Apple does not license Lightning for accessories without MFi — this is for prototype use only.
+For prototype: a Lightning to USB-A cable with the USB-A end cut and rewired to micro-USB is the fastest path. For production: explore USB-C iPhone targets (iPhone 15+) which eliminate the Lightning complexity entirely and allow a standard USB-C receptacle on the device bottom edge.
+
+4.2 USB-C charging port (power input)
+Connector typeUSB-C receptacle, 16-pin SMDLocationLeft edge of device, centered vertically in the PMIC zone (~105 mm from top)Function5V / 2A input to TP4056 + MT3608 PMIC. Charges LiPo. Also powers Pi directly when connected.Cutout size9.0 mm wide × 3.6 mm tall through enclosure left wall (1.0 mm thick)Cable clearanceUSB-C plug body is ~8.4 mm wide — 0.6 mm clearance each side in cutout
+4.3 RGB LED indicator
+TypeWS2812B addressable RGB LED, 5 mm through-hole or 5050 SMDLocationRear face (perforated zone), top-right corner, ~5 mm from top, ~5 mm from right edgeDriven byPi GPIO 18 (PWM-capable) via 3.3V logic — WS2812B accepts 3.3V data with 5V powerHole in wall5.5 mm diameter, light-pipe ABS insert to diffuseStatesSee ghostd LED spec in PRD-device.md §4.8
+4.4 Tactile button
+Type6 mm × 6 mm SMD tactile switch, 4.3 mm actuator heightLocationRear face, top-right corner, ~18 mm from top, ~5 mm from right edgeDriven byPi GPIO 17, pulled up to 3.3V, active lowCutout6.5 mm diameter circular cutout, ABS cap button insertFunctionSingle tap: play/pause. Double tap: speed cycle. Hold 3s: shutdown.
+4.5 microSD card access
+Slot location on PiRight long edge of Pi PCB, flush-mount slotEnclosure treatment3 mm slot in right enclosure wall at Pi microSD position (~32 mm from top of Pi, ~40 mm from top of device)AccessCard can be removed/inserted without opening enclosureProtrusionCard extends ~3 mm past Pi PCB edge — add 3 mm slot depth to right wall
+4.6 Masked / blocked ports
+The following Pi ports exist but are intentionally blocked in the enclosure — no cutouts are provided. This keeps the enclosure clean and prevents accidental use:
+
+PortLocation on PiTreatmentMini HDMILeft edge, ~12 mm from short edgeNo cutout. Blocked by enclosure wall.USB power portLeft edge, ~29 mm from short edgeNo cutout. Pi powered via GPIO pins from PMIC.CSI connectorRight short edge, centerNo cutout. Camera unused.40-pin GPIORight long edgeUnpopulated on Pi. No cutout.
+
+5. Internal component layout
+5.1 Zone map (top to bottom along phone long axis)
+
+ZoneY range (from top)HeightContentsCamera cutout0 – 20 mm20 mmVoid / ABS frame only. No components. Clears iPhone rear camera.Pi + battery20 – 80 mm60 mmLP654060 battery (60 mm long) + Pi Zero 2W above it. Battery and Pi overlap in this zone.Pi overhang80 – 85 mm5 mmPi extends 5 mm past battery bottom (Pi is 65 mm, battery is 60 mm).PMIC + routing85 – 115 mm30 mmCarrier PMIC board, USB-C charge port, wiring, JST connectors.Lightning zone115 – 138.4 mm23 mmLightning plug flex, strain relief, bottom wall.
+5.2 Pi mounting
+OrientationLong axis parallel to phone long axis. USB OTG port faces bottom (toward Lightning zone).Standoffs4× M2.5 × 5 mm brass standoffs, screwed into enclosure rear wall bossesPi secured byM2.5 × 4 mm pan-head screws into standoff topsPi-to-rear-wall gap0.5 mm air gap between Pi top surface and rear enclosure wall (perforation airflow)Pi-to-battery gapDirect contact acceptable — battery pouch is smooth and electrically inert. Optional 0.1 mm polyimide tape separator.
+5.3 Wiring summary
+
+FromToSignalWire/cable typePMIC 5V outPi GPIO pin 2 or 45V power26 AWG silicone, redPMIC GNDPi GPIO pin 6Ground26 AWG silicone, blackLiPo JSTPMIC battery input3.7V LiPoJST-PH 2-pin cable, 80 mmPi USB OTG (micro-USB)Lightning FPC boardUSB 2.0 data25 mm FPC or micro-USB OTG adapter + short cablePi GPIO 18WS2812B LED dataRGB LED control26 AWG, short trace or wirePi GPIO 17Tactile button pin 1Button input26 AWG, short trace or wireButton pin 2Pi GNDButton return26 AWG, short trace or wireUSB-C port VBUSPMIC USB-C input5V charge inputOn PMIC board
+
+6. Phone attachment
+6.1 Recommended: nano-grip adhesive pad
+Material3M 300LSE double-sided acrylic adhesive, 0.13 mm total thicknessCoverage areaFull front face of device minus USB-C access holes: ~60 × 130 mm effectiveBond strengthRemovable with slow peel — does not leave residue on phone glassRe-usability~20–30 attach/detach cycles before replacing padSourcing3M 300LSE tape sheets, cut to size. Amazon / Digi-Key.
+The adhesive pad holds the device mechanically during use. The Lightning connector itself provides the alignment and data connection — the adhesive prevents rocking/rotation during pocket use. The device should not rely on the Lightning connector for all mechanical load.
+
+6.2 Alternative: spring clip rail
+Clip locationTop edge of device — a thin ABS rail that hooks over the top of the phoneClip depthHooks 4 mm over the phone top edge — engages on phone frame, not glassSpring forceLight — enough to hold device flat, not so much it leaves marksTrade-offAdds ~4 mm to top of device (total height becomes 142 mm). Easier to remove than adhesive.
+
+7. Bill of materials — prototype
+
+ComponentSpec / PartQtySource~CostRaspberry Pi Zero 2WBCM2710A1, 512 MB, 65×30 mm1PiShop.us / rpilocator.com$15LiPo batteryLP654060, 2000 mAh, 3.7V1Adafruit #2011 (approx) / Ali$12PMIC moduleTP4056 + MT3608, 5V out, USB-C1Amazon / AliExpress$4Lightning plug assemblyMale Lightning, FPC tail1AliExpress repair parts$3Micro-USB OTG adapterMicro-USB male to USB-A female1Amazon$2USB-C receptacle (charge)16-pin SMD, or breakout board1Digi-Key / breakout board$3WS2812B LED5050 SMD or 5 mm through-hole1Adafruit / Amazon$1Tactile button6×6 mm SMD, 4.3 mm actuator1Digi-Key$1M2.5 standoffsM2.5 × 5 mm brass4Amazon standoff kit$1M2.5 screwsM2.5 × 4 mm pan-head4Amazon$13M 300LSE tapeSheet, cut to size1Amazon$3Silicone wire 26 AWGRed + black, 300 mm each1Amazon$3microSD card8 GB Class 10 / A11Amazon$83D printed enclosureABS or PLA, two halves1JLC3DP or local print$15JST-PH 2-pin cable80 mm, female both ends1Adafruit #261$1
+Estimated prototype total:  ~$73 in parts + $15–25 3D printing = ~$90–100 per unit
+
+
+8. Open questions / risks
+
+#QuestionNotes1Lightning plug sourcing without MFiRepair-market Lightning plug assemblies are available but vary in quality. Fine for prototype; not viable for commercial product. Target iPhone 15+ (USB-C) for production.2Pi thermal performance in sealed cavityPerforations provide convective path, but enclosure is still semi-enclosed. Run a thermal test under sustained ghostd load. Add 15×15 mm copper heatsink pad on SiP if throttling observed.3Camera module clearanceiPhone SE 2nd gen camera is ~10×10 mm at top-center. Measure exact position before finalizing top-zone enclosure CAD. Leave 2 mm margin around module.414.5 mm total thicknessDevice plus phone is 7.3 + 14.5 = 21.8 mm. Still fits in most jeans pockets (iPhone Pro Max + case is ~15 mm). Validate in real-world pocket test.5Lightning mating reliabilityLightning plugs from repair market vary. Test mating force and confirm USB data link is stable before finalizing FPC routing.6Enclosure halves join methodTwo options: snap-fit clips (hard to reopen), or 4× M2 screws (easy to service). Recommend screws for prototype — switch to snap-fit at production.
+Ghost — Confidential · Hardware Design Document v1.0 · 2026-04-17
+Ghost — Hardware Design Document     CONFIDENTIAL · v1.0 · 2026
+
+Ghost Device · Clip-on Prototype	Page 1
+

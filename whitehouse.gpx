@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Ghost"
+  xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>SF Mission District loop</name>
+    <desc>~11 min walking loop, residential streets</desc>
+  </metadata>
+  <trk>
+    <name>Mission District loop</name>
+    <trkseg>
+      <trkpt lat="38.879150390625" lon="-76.9818115234375"><time>1970-01-01T00:00:00Z</time></trkpt>
+      <trkpt lat="38.879150390625" lon="-76.9818115234375"><time>1970-01-01T00:00:30Z</time></trkpt>
+
+    </trkseg>
+  </trk>
+</gpx>

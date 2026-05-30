@@ -34,6 +34,8 @@ GPX format:
 """
 
 import argparse
+import asyncio
+import contextlib
 import json
 import os
 import signal
@@ -54,13 +56,37 @@ ROUTES_DIR   = "/data/routes"
 def _import_pmd3():
     try:
         from pymobiledevice3.remote.remote_service_discovery import RemoteServiceDiscoveryService
-        from pymobiledevice3.services.dvt.dvt_secure_socket_proxy import DvtSecureSocketProxyService
+        from pymobiledevice3.services.dvt.instruments.dvt_provider import DvtProvider
         from pymobiledevice3.services.dvt.instruments.location_simulation import LocationSimulation
-        return RemoteServiceDiscoveryService, DvtSecureSocketProxyService, LocationSimulation
+        return RemoteServiceDiscoveryService, DvtProvider, LocationSimulation
     except ImportError as e:
         err(f"pymobiledevice3 not importable: {e}")
         err("Make sure you're running inside the ghost venv, or use ghost-init.sh.")
         sys.exit(1)
+
+
+# ── Async-to-sync helpers for pymobiledevice3 ─────────────────────────────────
+@contextlib.contextmanager
+def _sync_async_ctx(async_cm, loop):
+    """Enter an async context manager synchronously on the given event loop."""
+    obj = loop.run_until_complete(async_cm.__aenter__())
+    try:
+        yield obj
+    except Exception as exc:
+        loop.run_until_complete(async_cm.__aexit__(type(exc), exc, exc.__traceback__))
+        raise
+    else:
+        loop.run_until_complete(async_cm.__aexit__(None, None, None))
+
+
+class _SyncSim:
+    """Sync wrapper around the async LocationSimulation for use in the playback loop."""
+    def __init__(self, sim, loop):
+        self._sim = sim
+        self._loop = loop
+
+    def set(self, lat, lon):
+        self._loop.run_until_complete(self._sim.set(lat, lon))
 
 
 # ── ANSI colors ───────────────────────────────────────────────────────────────
@@ -483,10 +509,12 @@ class GhostPlayer:
                 continue
 
             log(f"Opening DVT session → {host}:{port}")
+            _loop = asyncio.new_event_loop()
             try:
-                with RSD((host, port)) as rsd:
-                    with DVT(lockdown=rsd) as dvt:
-                        with LocationSimulation(dvt) as sim:
+                with _sync_async_ctx(RSD((host, port)), _loop) as rsd:
+                    with _sync_async_ctx(DVT(lockdown=rsd), _loop) as dvt:
+                        with _sync_async_ctx(LocationSimulation(dvt), _loop) as sim_async:
+                            sim = _SyncSim(sim_async, _loop)
                             ok("DVT session open — streaming waypoints.")
                             self._state = "playing"
                             loop_start = time.monotonic()
@@ -494,13 +522,13 @@ class GhostPlayer:
                             result = self._play_one_loop(sim, loop_start)
 
                             if result == "stopped":
-                                # sim.__exit__ clears location automatically
+                                # sim.__aexit__ clears location automatically
                                 break
 
                             elif result == "route_change":
                                 print()
                                 log("Applying route change...")
-                                # sim.__exit__ clears current location
+                                # sim.__aexit__ clears current location
                             # fall through — re-enter outer while to reopen session
 
                             elif result == "complete":
@@ -540,6 +568,8 @@ class GhostPlayer:
                              session_start_epoch=self._session_start)
                 time.sleep(3)
                 continue
+            finally:
+                _loop.close()
 
             # If we had a route change, load the new route before re-entering the loop
             if self._pending_route:

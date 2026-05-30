@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Ghost"
+  xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>SF Mission District loop</name>
+    <desc>~11 min walking loop, residential streets</desc>
+  </metadata>
+  <trk>
+    <name>Mission District loop</name>
+    <trkseg>
+      <trkpt lat="37.77490" lon="-122.41940"><time>1970-01-01T00:00:00Z</time></trkpt>
+      <trkpt lat="37.77530" lon="-122.41880"><time>1970-01-01T00:00:30Z</time></trkpt>
+      <trkpt lat="37.77580" lon="-122.41800"><time>1970-01-01T00:01:00Z</time></trkpt>
+      <trkpt lat="37.77620" lon="-122.41730"><time>1970-01-01T00:01:30Z</time></trkpt>
+      <trkpt lat="37.77650" lon="-122.41650"><time>1970-01-01T00:02:00Z</time></trkpt>
+      <trkpt lat="37.77670" lon="-122.41570"><time>1970-01-01T00:02:30Z</time></trkpt>
+      <trkpt lat="37.77680" lon="-122.41490"><time>1970-01-01T00:03:00Z</time></trkpt>
+      <trkpt lat="37.77670" lon="-122.41420"><time>1970-01-01T00:03:30Z</time></trkpt>
+      <trkpt lat="37.77650" lon="-122.41360"><time>1970-01-01T00:04:00Z</time></trkpt>
+      <trkpt lat="37.77610" lon="-122.41310"><time>1970-01-01T00:04:30Z</time></trkpt>
+      <trkpt lat="37.77560" lon="-122.41280"><time>1970-01-01T00:05:00Z</time></trkpt>
+      <trkpt lat="37.77500" lon="-122.41270"><time>1970-01-01T00:05:30Z</time></trkpt>
+      <trkpt lat="37.77440" lon="-122.41290"><time>1970-01-01T00:06:00Z</time></trkpt>
+      <trkpt lat="37.77390" lon="-122.41330"><time>1970-01-01T00:06:30Z</time></trkpt>
+      <trkpt lat="37.77360" lon="-122.41390"><time>1970-01-01T00:07:00Z</time></trkpt>
+      <trkpt lat="37.77350" lon="-122.41460"><time>1970-01-01T00:07:30Z</time></trkpt>
+      <trkpt lat="37.77360" lon="-122.41540"><time>1970-01-01T00:08:00Z</time></trkpt>
+      <trkpt lat="37.77390" lon="-122.41610"><time>1970-01-01T00:08:30Z</time></trkpt>
+      <trkpt lat="37.77430" lon="-122.41680"><time>1970-01-01T00:09:00Z</time></trkpt>
+      <trkpt lat="37.77470" lon="-122.41750"><time>1970-01-01T00:09:30Z</time></trkpt>
+      <trkpt lat="37.77490" lon="-122.41820"><time>1970-01-01T00:10:00Z</time></trkpt>
+      <trkpt lat="37.77490" lon="-122.41880"><time>1970-01-01T00:10:30Z</time></trkpt>
+      <trkpt lat="37.77490" lon="-122.41940"><time>1970-01-01T00:11:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

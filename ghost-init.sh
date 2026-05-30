@@ -188,6 +188,7 @@ if [[ -z "$USBMUXD_SOCKET" ]]; then
   [[ -z "$USBMUXD_SOCKET" ]] && die "usbmuxd socket not found after start attempt."
 fi
 ok "usbmuxd socket: $USBMUXD_SOCKET"
+export USBMUXD_SOCKET_ADDRESS="$USBMUXD_SOCKET"
 
 # Check pymobiledevice3 can see the phone
 DEVICE_LIST=$("$PMD3" usbmux list 2>/dev/null || echo "[]")
@@ -230,7 +231,7 @@ tunnel_running() {
 
 start_tunnel() {
   sudo rm -f "$TUNNEL_LOG" "$TUNNEL_PID_FILE" "$RSD_FILE"
-  sudo bash -c "'$PMD3' lockdown start-tunnel > '$TUNNEL_LOG' 2>&1 & echo \$! > '$TUNNEL_PID_FILE'"
+  sudo bash -c "USBMUXD_SOCKET_ADDRESS='$USBMUXD_SOCKET' '$PMD3' lockdown start-tunnel > '$TUNNEL_LOG' 2>&1 & echo \$! > '$TUNNEL_PID_FILE'"
   sleep 1
 
   local pid
@@ -283,7 +284,7 @@ fi
     if [[ -z "$pid" ]] || ! sudo kill -0 "$pid" 2>/dev/null; then
       echo -e "${YLW}⚠${NC}  [watchdog] Tunnel died — restarting..."
       sudo rm -f "$TUNNEL_LOG" "$TUNNEL_PID_FILE" "$RSD_FILE"
-      sudo bash -c "'$PMD3' lockdown start-tunnel > '$TUNNEL_LOG' 2>&1 & echo \$! > '$TUNNEL_PID_FILE'"
+      sudo bash -c "USBMUXD_SOCKET_ADDRESS='$USBMUXD_SOCKET' '$PMD3' lockdown start-tunnel > '$TUNNEL_LOG' 2>&1 & echo \$! > '$TUNNEL_PID_FILE'"
       sleep 2
       local_deadline=$((SECONDS + 20))
       restored=0
