@@ -12,9 +12,10 @@
 set -uo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────────────
-VENV_DIR="$HOME/ghost-env"
-PMD3="$VENV_DIR/bin/pymobiledevice3"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VENV_DIR="$SCRIPT_DIR/ghost-env"
 PYTHON="$VENV_DIR/bin/python3"
+PMD3="$PYTHON -m pymobiledevice3"
 
 # macOS-safe realpath substitute
 _realpath() { python3 -c "import os,sys; print(os.path.realpath(sys.argv[1]))" "$1"; }
@@ -159,13 +160,13 @@ install_deps() {
     python3 -m venv "$VENV_DIR"
   fi
 
-  if [[ ! -x "$PMD3" ]]; then
+  if ! "$PYTHON" -m pymobiledevice3 --version &>/dev/null; then
     info "Installing pymobiledevice3..."
     "$VENV_DIR/bin/pip" install --quiet --upgrade pip
     "$VENV_DIR/bin/pip" install --quiet pymobiledevice3
     ok "pymobiledevice3 installed."
   else
-    ok "pymobiledevice3 $("$PMD3" --version 2>&1 | head -1) present."
+    ok "pymobiledevice3 $("$PYTHON" -m pymobiledevice3 --version 2>&1 | head -1) present."
   fi
 }
 
@@ -201,7 +202,7 @@ ok "usbmuxd socket: $USBMUXD_SOCKET"
 export USBMUXD_SOCKET_ADDRESS="$USBMUXD_SOCKET"
 
 # Check pymobiledevice3 can see the phone
-DEVICE_LIST=$("$PMD3" usbmux list 2>/dev/null || echo "[]")
+DEVICE_LIST=$($PMD3 usbmux list 2>/dev/null || echo "[]")
 if [[ "$DEVICE_LIST" == "[]" ]] || [[ -z "$DEVICE_LIST" ]]; then
   warn "No device visible yet. Make sure iPhone is:"
   warn "  1. Unlocked"
@@ -241,7 +242,7 @@ tunnel_running() {
 
 start_tunnel() {
   sudo rm -f "$TUNNEL_LOG" "$TUNNEL_PID_FILE" "$RSD_FILE"
-  sudo bash -c "USBMUXD_SOCKET_ADDRESS='$USBMUXD_SOCKET' '$PMD3' lockdown start-tunnel > '$TUNNEL_LOG' 2>&1 & echo \$! > '$TUNNEL_PID_FILE'"
+  sudo bash -c "USBMUXD_SOCKET_ADDRESS='$USBMUXD_SOCKET' '$PYTHON' -m pymobiledevice3 lockdown start-tunnel > '$TUNNEL_LOG' 2>&1 & echo \$! > '$TUNNEL_PID_FILE'"
   sleep 1
 
   local pid
@@ -294,7 +295,7 @@ fi
     if [[ -z "$pid" ]] || ! sudo kill -0 "$pid" 2>/dev/null; then
       echo -e "${YLW}⚠${NC}  [watchdog] Tunnel died — restarting..."
       sudo rm -f "$TUNNEL_LOG" "$TUNNEL_PID_FILE" "$RSD_FILE"
-      sudo bash -c "USBMUXD_SOCKET_ADDRESS='$USBMUXD_SOCKET' '$PMD3' lockdown start-tunnel > '$TUNNEL_LOG' 2>&1 & echo \$! > '$TUNNEL_PID_FILE'"
+      sudo bash -c "USBMUXD_SOCKET_ADDRESS='$USBMUXD_SOCKET' '$PYTHON' -m pymobiledevice3 lockdown start-tunnel > '$TUNNEL_LOG' 2>&1 & echo \$! > '$TUNNEL_PID_FILE'"
       sleep 2
       local_deadline=$((SECONDS + 20))
       restored=0
@@ -331,7 +332,7 @@ echo ""
 
 RUNNER_ARGS=(
   "$ROUTE_FILE"
-  --pmd3 "$PMD3"
+  --pmd3 "$PYTHON"
   --rsd-file "$RSD_FILE"
   --speed "$SPEED_OVERRIDE"
 )
